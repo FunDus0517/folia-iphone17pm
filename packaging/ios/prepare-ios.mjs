@@ -12,6 +12,26 @@ try {
     runCapacitor(['add', 'ios', '--packagemanager', 'SPM']);
   }
   runCapacitor(['sync', 'ios']);
+  const plistPath = path.join(nativeRoot, 'App/App/Info.plist');
+  const readPlist = () => JSON.parse(run('/usr/bin/plutil', ['-convert', 'json', '-o', '-', plistPath], {
+    stdio: ['ignore', 'pipe', 'inherit'], encoding: 'utf8',
+  }).stdout);
+  const initialPlist = readPlist();
+  // 已存在的键覆盖，首次生成时缺少的键插入；重复同步也保持唯一的简体中文声明。
+  for (const [key, valueArguments] of [
+    ['CFBundleDevelopmentRegion', ['-string', 'zh_CN']],
+    ['CFBundleLocalizations', ['-json', '["zh-Hans"]']],
+  ]) {
+    run('/usr/bin/plutil', [Object.hasOwn(initialPlist, key) ? '-replace' : '-insert', key, ...valueArguments, plistPath]);
+  }
+  run('/usr/bin/plutil', ['-lint', plistPath]);
+  const localizedPlist = readPlist();
+  if (localizedPlist.CFBundleDevelopmentRegion !== 'zh_CN'
+    || !Array.isArray(localizedPlist.CFBundleLocalizations)
+    || localizedPlist.CFBundleLocalizations.length !== 1
+    || localizedPlist.CFBundleLocalizations[0] !== 'zh-Hans') {
+    throw new Error('原生应用的简体中文语言声明校验失败。');
+  }
   const iconDir = path.join(nativeRoot, 'App/App/Assets.xcassets/AppIcon.appiconset');
   fs.mkdirSync(iconDir, { recursive: true });
   run('/usr/bin/sips', ['-z', '1024', '1024', path.join(repositoryRoot, 'build/icon.png'), '--out', path.join(iconDir, 'AppIcon.png')]);

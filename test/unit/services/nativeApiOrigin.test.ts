@@ -76,7 +76,7 @@ describe('resolveFoliaApiUrl', () => {
         vi.stubEnv('VITE_FOLIA_API_BASE', origin);
 
         expect(() => resolveFoliaApiUrl('/api/generate-theme'))
-            .toThrow('VITE_FOLIA_API_BASE must be a credential-free HTTPS origin without a path.');
+            .toThrow('VITE_FOLIA_API_BASE 必须是纯 HTTPS 站点源地址，且不含账号、密码、路径或查询参数。');
     });
 
     it.each(['not-an-origin', '/relative-origin', 'https://'])('rejects a malformed origin: %s', (origin) => {

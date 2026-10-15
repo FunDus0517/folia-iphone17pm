@@ -2,9 +2,12 @@ import { defineConfig } from '@playwright/test';
 import base from './playwright.config';
 
 // playwright.mobile.config.ts — real WebKit touch regression for phone layouts.
+const webServer = base.webServer;
+if (!webServer || Array.isArray(webServer)) throw new Error('Mobile tests require the single Vite web server.');
 export default defineConfig({
   ...base,
   workers: 1,
+  webServer: { ...webServer, env: { ...webServer.env, VITE_NATIVE_IOS: 'true' } },
   projects: [{
     name: 'iphone17pm-webkit',
     testDir: './test/ui',

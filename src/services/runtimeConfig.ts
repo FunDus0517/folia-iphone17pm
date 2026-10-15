@@ -9,10 +9,16 @@ export const resolveFoliaApiUrl = (requestPath: string): string => {
         return requestPath;
     }
 
-    const origin = new URL(configuredOrigin);
+    const invalidOriginMessage = 'VITE_FOLIA_API_BASE 必须是纯 HTTPS 站点源地址，且不含账号、密码、路径或查询参数。';
+    let origin: URL;
+    try {
+        origin = new URL(configuredOrigin);
+    } catch {
+        throw new Error(invalidOriginMessage);
+    }
     if (origin.protocol !== 'https:' || origin.username || origin.password
         || origin.pathname !== '/' || origin.search || origin.hash) {
-        throw new Error('VITE_FOLIA_API_BASE must be a credential-free HTTPS origin without a path.');
+        throw new Error(invalidOriginMessage);
     }
     return new URL(requestPath, origin.origin).toString();
 };

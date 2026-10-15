@@ -1,26 +1,26 @@
-name: iOS Unsigned IPA
+name: 苹果未签名安装包
 
 on:
   workflow_dispatch:
     inputs:
       backend_origin:
-        description: 'Optional HTTPS origin of your deployed Folia backend (no /api path)'
+        description: '可选：已部署的 Folia 服务端 HTTPS 域名，不含 /api 路径'
         required: false
         type: string
       netease_api_base:
-        description: 'Optional HTTPS NetEase API URL or /api path on backend_origin'
+        description: '可选：网易云接口 HTTPS 地址，或上述域名下的 /api 路径'
         required: false
         type: string
       kugou_api_base:
-        description: 'Optional HTTPS KuGou API URL or /api path on backend_origin'
+        description: '可选：酷狗接口 HTTPS 地址，或上述域名下的 /api 路径'
         required: false
         type: string
       qq_api_base:
-        description: 'Optional HTTPS QQ API URL or /api/qq on backend_origin'
+        description: '可选：QQ 音乐接口 HTTPS 地址，或上述域名下的 /api/qq'
         required: false
         type: string
       publish_release:
-        description: 'Publish the unsigned IPA and checksums as a GitHub prerelease'
+        description: '将未签名安装包与校验文件发布到仓库下载页'
         required: true
         default: true
         type: boolean
@@ -52,10 +52,10 @@ jobs:
       ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
 
     steps:
-      - name: Check out source
+      - name: 获取源码
         uses: actions/checkout@v4
 
-      - name: Set up Node.js 24
+      - name: 配置构建运行环境
         uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -64,37 +64,37 @@ jobs:
             package-lock.json
             packaging/ios/package-lock.json
 
-      - name: Check Xcode
+      - name: 检查苹果编译工具
         run: |
           xcodebuild -version
           version="$(xcodebuild -version | awk '/Xcode/ { print $2 }')"
           if [ "${version%%.*}" -lt 26 ]; then
-            echo '::error::Capacitor 8 requires Xcode 26 or newer.'
+            echo '::error::原生工具链要求 Xcode 26 或更新版本。'
             exit 1
           fi
 
-      - name: Install web dependencies without desktop download scripts
+      - name: 安装网页依赖并跳过桌面程序下载
         run: npm ci --ignore-scripts --no-audit --no-fund
 
-      - name: Install isolated iOS tooling
+      - name: 安装独立的苹果打包工具
         run: npm --prefix packaging/ios ci --no-audit --no-fund
 
-      - name: Test portable iOS build validation
+      - name: 测试打包参数校验
         run: npm --prefix packaging/ios test
 
-      - name: Typecheck the web application
+      - name: 检查应用代码类型
         run: npm run typecheck
 
-      - name: Test native API routing and provider regressions
-        run: npm run test:unit -- test/unit/services/nativeApiOrigin.test.ts test/unit/services/runtimeConfig.test.ts test/unit/services/coverCache.test.ts test/unit/onlineMusic/qqTransport.test.ts test/unit/onlineMusic/kugouTransport.test.ts
+      - name: 测试服务地址解析与音乐接口回归
+        run: npm run test:unit -- test/unit/services/nativeApiOrigin.test.ts test/unit/services/runtimeConfig.test.ts test/unit/services/coverCache.test.ts test/unit/onlineMusic/qqTransport.test.ts test/unit/onlineMusic/kugouTransport.test.ts test/unit/i18n/nativeChineseLanguage.test.ts test/unit/i18n/missingTranslation.test.ts
 
-      - name: Install WebKit for iPhone layout regression
+      - name: 安装手机布局测试浏览器
         run: npx playwright install webkit
 
-      - name: Test iPhone portrait, landscape, and touch controls
+      - name: 测试中文界面、竖横屏与触控按键
         run: npx playwright test -c playwright.mobile.config.ts
 
-      - name: Save iPhone layout screenshots and failure evidence
+      - name: 保存手机布局截图与问题记录
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -103,17 +103,17 @@ jobs:
           retention-days: 14
           path: test-results/
 
-      - name: Build bundled native web assets
+      - name: 编译内嵌网页资源
         run: npm --prefix packaging/ios run build:web
 
-      - name: Generate and synchronize the iOS SPM shell
+      - name: 生成并同步苹果原生工程
         run: npm --prefix packaging/ios run prepare:ios
 
-      - name: Archive and verify unsigned IPA
+      - name: 编译真机安装包并校验未签名状态
         id: ipa
         run: npm --prefix packaging/ios run build:unsigned
 
-      - name: Upload IPA, checksum, and build metadata
+      - name: 保存安装包、校验值与构建记录
         uses: actions/upload-artifact@v4
         with:
           name: Folia-iPhone17PM-unsigned-${{ github.run_number }}
@@ -124,7 +124,7 @@ jobs:
             packaging/ios/output/*.sha256
             packaging/ios/output/BUILD-INFO.json
 
-      - name: Publish GitHub prerelease
+      - name: 发布仓库下载页
         if: startsWith(github.ref, 'refs/tags/ios-') || inputs.publish_release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -142,40 +142,41 @@ jobs:
             tag="ios-build-${BUILD_NUMBER}"
           fi
           cat > "$RUNNER_TEMP/ios-release-notes.md" <<'NOTES'
-          ## Folia for iPhone 17 Pro Max
+          ## Folia 苹果 17 大屏版
 
-          This is an **unsigned arm64 IPA** built from the source commit attached to this release.
-          Sign it with your own Apple identity before installing it. It is not an App Store build.
+          本次提供从对应源码提交编译的 **真机未签名安装包**。
+          安装前需要自行签名。
 
-          - Includes iPhone safe-area, portrait/landscape and touch-target adaptations.
-          - Bundles the web assets locally; no remote web app is silently substituted.
-          - Does not bundle a Node.js music backend. Online services depend on the API URLs configured for this build.
-          - See `BUILD-INFO.json` for the backend configuration state and SHA-256 value.
-          - See `docs/IOS-BUILD.md` in the source repository for build, signing and verification notes.
+          - 应用全局使用简体中文；包含安全区、竖横屏、触控按键与浮层遮挡修复。
+          - 网页资源在包内本地加载，未替换成远程网页。
+          - 当前未配置音乐服务端，可体验界面与内置歌词动画预览；在线搜索播放需补充接口。
+          - 手机本地音频导入尚未移植；本包不包含可试听歌曲。
+          - 服务配置与校验值见构建记录附件。
+          - 构建及签名说明见源码中的 `docs/IOS-BUILD.md`。
           NOTES
           if ! gh release view "$tag" --repo "$REPOSITORY" >/dev/null 2>&1; then
             gh release create "$tag" --repo "$REPOSITORY" --target "$SOURCE_SHA" \
-              --title "Folia iPhone 17 Pro Max — unsigned build ${BUILD_NUMBER}" \
+              --title "Folia 苹果17大屏版（未签名）— 第${BUILD_NUMBER}次构建" \
               --prerelease --notes-file "$RUNNER_TEMP/ios-release-notes.md"
           fi
           gh release upload "$tag" packaging/ios/output/*.ipa \
             packaging/ios/output/*.sha256 packaging/ios/output/BUILD-INFO.json \
             --repo "$REPOSITORY" --clobber
 
-      - name: Summarize the actual build result
+      - name: 汇总本次实际构建结果
         if: success()
         env:
           IPA_NAME: ${{ steps.ipa.outputs.ipa_name }}
         run: |
           {
-            echo '## Unsigned iOS package'
-            echo "- File: \`${IPA_NAME}\`"
-            echo '- Architecture: arm64, real iPhone device archive'
-            echo '- Signing: not signed; user signing is required before installation'
+            echo '## 苹果未签名安装包'
+            echo "- 文件： \`${IPA_NAME}\`"
+            echo '- 架构：苹果真机 arm64'
+            echo '- 签名：尚未签名，安装前需要自行签名'
             if [ -n "$VITE_FOLIA_API_BASE" ]; then
-              echo '- Folia backend origin: configured (see BUILD-INFO.json)'
+              echo '- 音乐服务端：已配置，详见构建记录'
             else
-              echo '- Folia backend origin: not configured; online API features need a configured backend'
+              echo '- 音乐服务端：未配置，在线音乐功能需补充接口'
             fi
-            echo '- ZIP, Info.plist, arm64 and unsigned-state checks passed in this workflow'
+            echo '- 安装包完整性、应用信息、真机架构和未签名状态校验已通过'
           } >> "$GITHUB_STEP_SUMMARY"

@@ -2,11 +2,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { nativeRoot, repositoryRoot, requireMacOS, run, runCapacitor } from './build-support.mjs';
 
-// packaging/ios/prepare-ios.mjs: regenerate/sync the pinned SPM shell and brand its app icon.
+// packaging/ios/prepare-ios.mjs：生成并同步固定版本的 SPM 原生容器，再设置应用图标。
 try {
   requireMacOS();
   if (!fs.existsSync(path.join(repositoryRoot, 'dist/index.html'))) {
-    throw new Error('Build local web assets with npm --prefix packaging/ios run build:web first.');
+    throw new Error('请先运行 npm --prefix packaging/ios run build:web 构建本地网页资源。');
   }
   if (!fs.existsSync(path.join(nativeRoot, 'App/App.xcodeproj/project.pbxproj'))) {
     runCapacitor(['add', 'ios', '--packagemanager', 'SPM']);
@@ -19,7 +19,7 @@ try {
     images: [{ filename: 'AppIcon.png', idiom: 'universal', platform: 'ios', size: '1024x1024' }],
     info: { author: 'xcode', version: 1 },
   }, null, 2)}\n`);
-  console.log(`IOS_PROJECT_READY: ${path.join(nativeRoot, 'App/App.xcodeproj')}`);
+  console.log(`IOS_PROJECT_READY: iOS 原生工程已准备完成：${path.join(nativeRoot, 'App/App.xcodeproj')}`);
 } catch (error) {
   console.error(error.message);
   process.exitCode = 1;

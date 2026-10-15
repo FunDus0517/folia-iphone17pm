@@ -28,12 +28,22 @@ const ZH_FALLBACKS: Record<string, string> = flattenLocale(zhCN);
 
 export type AppLanguagePreference = 'system' | 'en' | 'zh-CN' | 'in';
 export const APP_LANGUAGE_STORAGE_KEY = 'folia_app_language';
+export const NATIVE_CHINESE_LANGUAGE = import.meta.env.VITE_NATIVE_IOS === 'true';
+
+// 原生 iOS 发行版固定使用简体中文，Web 与桌面版继续保留原来的语言偏好。
+export const normalizeAppLanguagePreference = (preference: AppLanguagePreference): AppLanguagePreference => (
+  NATIVE_CHINESE_LANGUAGE ? 'zh-CN' : preference
+);
 
 const isSupportedManualLanguage = (value: string | null | undefined): value is Exclude<AppLanguagePreference, 'system'> => (
   value === 'en' || value === 'zh-CN' || value === 'in'
 );
 
 const normalizeSupportedLanguage = (value: string | null | undefined): Exclude<AppLanguagePreference, 'system'> => {
+  if (NATIVE_CHINESE_LANGUAGE) {
+    return 'zh-CN';
+  }
+
   if (!value) {
     return 'en';
   }
@@ -50,6 +60,10 @@ const normalizeSupportedLanguage = (value: string | null | undefined): Exclude<A
 };
 
 export const readStoredAppLanguagePreference = (): AppLanguagePreference => {
+  if (NATIVE_CHINESE_LANGUAGE) {
+    return 'zh-CN';
+  }
+
   if (typeof window === 'undefined') {
     return 'system';
   }
@@ -96,11 +110,13 @@ i18n
         translation: ind
       }
     },
-    fallbackLng: 'en',
+    fallbackLng: NATIVE_CHINESE_LANGUAGE ? 'zh-CN' : 'en',
     parseMissingKeyHandler: (key: string, defaultValue?: string): string => (
-      resolveMissingTranslation(ZH_FALLBACKS, key, defaultValue)
+      NATIVE_CHINESE_LANGUAGE
+        ? (ZH_FALLBACKS[key] ?? (defaultValue && /[\u3400-\u9fff]/.test(defaultValue) ? defaultValue : '暂无内容'))
+        : resolveMissingTranslation(ZH_FALLBACKS, key, defaultValue)
     ),
-    supportedLngs: ['en', 'zh-CN', 'in'],
+    supportedLngs: NATIVE_CHINESE_LANGUAGE ? ['zh-CN'] : ['en', 'zh-CN', 'in'],
     ...(initialLanguagePreference !== 'system' ? { lng: initialLanguagePreference } : {}),
     detection: {
       order: ['localStorage', 'navigator', 'htmlTag'],
@@ -137,16 +153,17 @@ pushLocaleToMainProcess(i18n.resolvedLanguage ?? i18n.language);
 export const applyAppLanguagePreference = async (
   preference: AppLanguagePreference
 ): Promise<Exclude<AppLanguagePreference, 'system'>> => {
+  const effectivePreference = normalizeAppLanguagePreference(preference);
   if (typeof window !== 'undefined') {
-    if (preference === 'system') {
-      localStorage.setItem(APP_LANGUAGE_STORAGE_KEY, preference);
+    if (effectivePreference === 'system') {
+      localStorage.setItem(APP_LANGUAGE_STORAGE_KEY, effectivePreference);
       localStorage.removeItem('i18nextLng');
     } else {
-      localStorage.setItem(APP_LANGUAGE_STORAGE_KEY, preference);
+      localStorage.setItem(APP_LANGUAGE_STORAGE_KEY, effectivePreference);
     }
   }
 
-  const nextLanguage = preference === 'system' ? detectSystemLanguage() : preference;
+  const nextLanguage = effectivePreference === 'system' ? detectSystemLanguage() : effectivePreference;
   await i18n.changeLanguage(nextLanguage);
   if (typeof window !== 'undefined') {
     await window.electron?.setAppLocale?.(nextLanguage);

@@ -3,7 +3,7 @@ import { Languages, LayoutList, Move } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useShallow } from 'zustand/react/shallow';
 import type { Theme } from '../../../types';
-import type { AppLanguagePreference } from '../../../i18n/config';
+import { NATIVE_CHINESE_LANGUAGE, type AppLanguagePreference } from '../../../i18n/config';
 import { CustomSelect } from '../../shared/CustomSelect';
 import PinnedCommandSettings from './PinnedCommandSettings';
 import PonderHintSettingsSection from './PonderHintSettingsSection';
@@ -74,12 +74,14 @@ const GeneralSettingsSubview: React.FC<GeneralSettingsSubviewProps> = ({
 
     const currentResolvedLanguage = getResolvedLanguageLabel();
 
-    const languageOptions: Array<{ value: AppLanguagePreference; label: string; }> = [
-        { value: 'system', label: t('options.appLanguageSystem') },
-        { value: 'zh-CN', label: t('options.appLanguageZhCN') },
-        { value: 'en', label: t('options.appLanguageEnUS') || 'English' },
-        { value: 'in', label: t('options.appLanguageInID') || 'Bahasa Indonesia' },
-    ];
+    const languageOptions: Array<{ value: AppLanguagePreference; label: string; }> = NATIVE_CHINESE_LANGUAGE
+        ? [{ value: 'zh-CN', label: t('options.appLanguageZhCN') }]
+        : [
+            { value: 'system', label: t('options.appLanguageSystem') },
+            { value: 'zh-CN', label: t('options.appLanguageZhCN') },
+            { value: 'en', label: t('options.appLanguageEnUS') || 'English' },
+            { value: 'in', label: t('options.appLanguageInID') || 'Bahasa Indonesia' },
+        ];
 
     const languageHint = appLanguagePreference === 'system'
         ? (t('options.appLanguageSystemHint')).replace('{{language}}', currentResolvedLanguage)

@@ -9,7 +9,7 @@ import i18n from '../i18n/config';
 
 
 import { normalizePinnedCommandIds, readPinnedCommandIds, writePinnedCommandIds, type PinnedCommandIds } from '../components/command-palette/pinnedCommandPreferences';
-import { applyAppLanguagePreference, readStoredAppLanguagePreference, type AppLanguagePreference } from '../i18n/config';
+import { applyAppLanguagePreference, normalizeAppLanguagePreference, readStoredAppLanguagePreference, type AppLanguagePreference } from '../i18n/config';
 import { setStatusMessage } from './useStatusMessageStore';
 import type { SettingsAnchorId } from '../components/modal/settings/navigation/settingsAnchorModel';
 
@@ -97,8 +97,9 @@ export const useSettingsModalStore = create<SettingsModalUiState>((set, get) => 
         },
     })),
     handleSetAppLanguagePreference: async (preference) => {
-        await applyAppLanguagePreference(preference);
-        set({ appLanguagePreference: preference });
+        const effectivePreference = normalizeAppLanguagePreference(preference);
+        await applyAppLanguagePreference(effectivePreference);
+        set({ appLanguagePreference: effectivePreference });
         const getLanguageLabel = (pref: AppLanguagePreference): string => {
             switch (pref) {
                 case 'zh-CN': return i18n.t('options.appLanguageZhCN', { lng: 'zh-CN' });
@@ -110,9 +111,9 @@ export const useSettingsModalStore = create<SettingsModalUiState>((set, get) => 
 
         setStatusMessage({
             type: 'info',
-            text: preference === 'system'
+            text: effectivePreference === 'system'
                 ? i18n.t('notifications.langFollowSystem')
-                : i18n.t('notifications.langManual', { language: getLanguageLabel(preference) }),
+                : i18n.t('notifications.langManual', { language: getLanguageLabel(effectivePreference) }),
         });
     },
     setPinnedCommandId: (slotIndex, commandId) => {

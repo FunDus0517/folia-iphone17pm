@@ -1,5 +1,5 @@
 import type { HomeViewTab, ReplayGainMode, VisualizerMode } from '../../types';
-import type { AppLanguagePreference } from '../../i18n/config';
+import { NATIVE_CHINESE_LANGUAGE, type AppLanguagePreference } from '../../i18n/config';
 import type { PanelTab } from '../UnifiedPanel';
 import type { AudioEqualizerModeId } from '../../utils/audioEqualizer';
 import type { GridSurfaceActionId } from '../../types/gridCommandSurface';
@@ -213,6 +213,7 @@ export const createAppLanguageCommand = (
     title,
     description,
     keywords,
+    isAvailable: () => !NATIVE_CHINESE_LANGUAGE || preference === 'zh-CN',
     execute: async (_input, context) => {
         await context.settings.setAppLanguagePreference(preference);
         return true;

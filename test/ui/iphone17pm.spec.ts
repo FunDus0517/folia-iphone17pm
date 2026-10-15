@@ -36,8 +36,8 @@ const seedPlayer = async (page: Page) => {
     const { usePlaybackStore } = await import(playbackPath);
     const { useAppViewStore } = await import(viewPath);
     const song = {
-      id: 397, name: 'Mobile Layout Fixture', artists: [{ id: 10, name: 'Fixture Artist' }],
-      album: { id: 20, name: 'Fixture Album' }, durationMs: 10_000,
+      id: 397, name: '中文测试曲目', artists: [{ id: 10, name: '测试歌手' }],
+      album: { id: 20, name: '测试专辑' }, durationMs: 10_000,
       sourceRef: { kind: 'online', providerId: 'netease', mediaId: '397' },
     };
     usePlaybackStore.setState({
@@ -52,6 +52,7 @@ const seedPlayer = async (page: Page) => {
 test.beforeEach(async ({ page }) => {
   await installBaseState(page, { neteaseMode: 'logged-in', preserveNativeMediaQueries: true });
   await page.addInitScript(() => {
+    localStorage.setItem('folia_app_language', 'en');
     // The shared desktop fixture supplies only part of Electron's API. iOS has no Electron bridge.
     delete (window as Window & { electron?: unknown }).electron;
     const state = new WeakMap<HTMLMediaElement, { src: string; paused: boolean }>();
@@ -90,6 +91,9 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('portrait home has full-size navigation and a non-zooming search input', async ({ page }) => {
+  // Shared fixtures intentionally seed en-US plus an old English preference: native iOS must override both.
+  await expect(page.locator('html')).toHaveAttribute('lang', 'zh-CN');
+  await expect(page.locator('.folia-home-settings')).toHaveAttribute('title', '选项');
   await expect(page.locator('meta[name="viewport"]')).toHaveAttribute('content', /viewport-fit=cover/);
   const navigation = page.locator('.folia-home-navigation');
   await expect(navigation).toBeVisible();
@@ -126,12 +130,12 @@ for (const [orientation, viewport] of Object.entries({ portrait, landscape })) {
     await page.addStyleTag({ content: `:root { --folia-safe-top:${top}px; --folia-safe-bottom:${bottom}px; --folia-safe-left:${side}px; --folia-safe-right:${side}px; }` });
     await seedPlayer(page);
     const controls = page.locator('.folia-player-controls');
-    const play = controls.getByRole('button', { name: 'Play', exact: true });
+    const play = controls.getByRole('button', { name: '播放', exact: true });
     await expectTouchTarget(play);
     for (const button of await controls.locator('[data-ponder-slot]').all()) await expectTouchTarget(button);
     expect((await controls.locator('input[type="range"]').boundingBox())!.height).toBeGreaterThanOrEqual(44);
     await play.tap();
-    await expect(controls.getByRole('button', { name: 'Pause', exact: true })).toBeVisible();
+    await expect(controls.getByRole('button', { name: '暂停', exact: true })).toBeVisible();
     await expect(page.locator('.folia-player-expanded')).toBeVisible();
     await expectInside(controls, viewport, side);
     const box = (await controls.boundingBox())!;
@@ -140,11 +144,16 @@ for (const [orientation, viewport] of Object.entries({ portrait, landscape })) {
     const handle = page.getByTestId('panel-toggle').getByRole('button');
     await expectTouchTarget(handle);
     await expectInside(handle, viewport, side);
+    const controlsBox = (await controls.boundingBox())!;
+    const handleBox = (await handle.boundingBox())!;
+    expect(controlsBox.x + controlsBox.width).toBeLessThanOrEqual(handleBox.x);
     await handle.tap();
     const panel = page.getByTestId('unified-panel-surface');
     await expect(panel).toBeVisible();
     await expectInside(panel, viewport, side);
     expect((await panel.boundingBox())!.y).toBeGreaterThanOrEqual(top);
+    expect((await panel.boundingBox())!.y + (await panel.boundingBox())!.height)
+      .toBeLessThanOrEqual((await controls.boundingBox())!.y - 8);
     for (const tab of await panel.locator('[data-ponder-panel-tab-button]').all()) await expectTouchTarget(tab);
     await page.screenshot({ path: `test-results/iphone17pm-${orientation}-player.png` });
   });
@@ -160,7 +169,7 @@ test('search and settings fit after rotation, with reachable close controls', as
   await page.setViewportSize(landscape);
   await expectInside(search, landscape);
   await page.screenshot({ path: 'test-results/iphone17pm-landscape-search.png' });
-  await search.getByRole('button', { name: 'Back to Home', exact: true }).tap();
+  await search.getByRole('button', { name: '返回主页', exact: true }).tap();
   await expect(search).toBeHidden();
   await page.evaluate(async () => {
     const path = '/src/stores/useSettingsModalStore.ts';
@@ -170,9 +179,9 @@ test('search and settings fit after rotation, with reachable close controls', as
   const settings = page.getByTestId('settings-panel');
   await expect(settings).toBeVisible();
   await expectInside(settings, landscape);
-  await expectTouchTarget(settings.getByRole('button', { name: 'Close', exact: true }));
+  await expectTouchTarget(settings.getByRole('button', { name: '关闭', exact: true }));
   await page.screenshot({ path: 'test-results/iphone17pm-landscape-settings.png' });
-  await settings.getByRole('button', { name: 'Close', exact: true }).tap();
+  await settings.getByRole('button', { name: '关闭', exact: true }).tap();
   await expect(settings).toBeHidden();
   await page.evaluate(async () => {
     const path = '/src/stores/useAppViewStore.ts';
@@ -191,6 +200,6 @@ test('wide desktop keeps the original compact controls and search typography', a
   await expect(page.locator('.folia-home-search input')).toHaveCSS('font-size', '14px');
   expect((await page.locator('.folia-home-settings').boundingBox())!.height).toBeLessThan(44);
   await seedPlayer(page);
-  await page.locator('.folia-player-controls').getByRole('button', { name: 'Play', exact: true }).tap();
+  await page.locator('.folia-player-controls').getByRole('button', { name: '播放', exact: true }).tap();
   await expect(page.locator('.folia-player-expanded')).toBeHidden();
 });

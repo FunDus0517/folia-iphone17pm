@@ -94,6 +94,15 @@ jobs:
       - name: Test iPhone portrait, landscape, and touch controls
         run: npx playwright test -c playwright.mobile.config.ts
 
+      - name: Save iPhone layout screenshots and failure evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: iPhone17PM-layout-${{ github.run_number }}
+          if-no-files-found: ignore
+          retention-days: 14
+          path: test-results/
+
       - name: Build bundled native web assets
         run: npm --prefix packaging/ios run build:web
 

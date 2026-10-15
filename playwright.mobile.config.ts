@@ -16,6 +16,7 @@ export default defineConfig({
       isMobile: true,
       hasTouch: true,
       serviceWorkers: 'block',
+      screenshot: 'only-on-failure',
       // The base config can point at a local Chromium binary, not a WebKit binary.
       launchOptions: {},
     },

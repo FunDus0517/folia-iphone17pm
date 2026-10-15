@@ -44,7 +44,7 @@ export const GridViewTabs: React.FC<GridViewTabsProps> = ({ tabs, isDaylight, on
     const chrome = gridChromeClassesFor(isDaylight);
 
     return (
-        <div className={`pointer-events-auto flex h-7 items-center rounded-full p-0.5 backdrop-blur-md ${chrome.pill}`}>
+        <div className={`folia-grid-view-tabs pointer-events-auto flex h-7 items-center rounded-full p-0.5 backdrop-blur-md ${chrome.pill}`}>
             {onOpenMap && (
                 <button
                     type="button"

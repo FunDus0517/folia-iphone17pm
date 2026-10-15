@@ -40,6 +40,10 @@
     touch-action: manipulation;
   }
 
+  .folia-grid-view-tabs { height: auto; min-height: 48px; }
+  .folia-grid-view-tabs button,
+  .folia-home-settings { min-width: 44px; min-height: 44px; }
+
   .folia-home-search input,
   .folia-search-workspace input,
   .folia-command-header input {
@@ -82,7 +86,7 @@
   }
 
   /* The original half-hidden handle is a hover affordance, not a touch affordance. */
-  [data-testid="panel-toggle"] .folia-panel-handle { transform: none; opacity: 1; }
+  [data-testid="panel-toggle"] .folia-panel-handle { transform: none; translate: 0 0; opacity: 1; }
 
   [data-testid="unified-panel-surface"] {
     width: min(360px, calc(100vw - var(--folia-safe-left) - var(--folia-safe-right) - 32px));
@@ -114,6 +118,10 @@
 
   .folia-search-workspace > header form { min-width: 0; }
   .folia-search-add-queue { opacity: 0.8; }
+
+  /* The touch tutorial hotspot otherwise appears on top of a dialog's close button. */
+  :root:has(.folia-search-workspace, .folia-settings-overlay, .folia-command-overlay)
+    [data-testid="page-ponder-touch-button"] { display: none; }
 
   .folia-command-overlay,
   .folia-settings-overlay {
@@ -149,13 +157,14 @@
   .lattice-tools-slider-icon { width: 44px; height: 44px; }
   .lattice-tools-panel {
     width: min(344px, calc(100vw - var(--folia-safe-left) - var(--folia-safe-right) - 32px));
-    max-height: 100%;
+    max-height: var(--folia-tools-available-height, 100%);
     overflow-y: auto;
     overscroll-behavior: contain;
   }
   .lattice-tools-stack {
-    max-height: calc(var(--folia-viewport-height) - var(--folia-safe-top) - var(--folia-safe-bottom)
+    --folia-tools-available-height: calc(var(--folia-viewport-height) - var(--folia-safe-top) - var(--folia-safe-bottom)
       - var(--wall-tools-bottom, 24px) - 64px - var(--wall-tools-top-reserve));
+    max-height: var(--folia-tools-available-height);
   }
 
   .bravais-seam .bravais-seam-icon,

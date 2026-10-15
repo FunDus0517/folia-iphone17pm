@@ -21,7 +21,7 @@ const expectInside = async (target: Locator, viewport: typeof portrait, inset = 
   }).toBe(true);
 };
 
-// Seed the ordinary playback stores, then exercise the real HTML audio element and controls.
+// Seed ordinary playback stores. Media events are mocked below: this tests UI, not codec/device audio.
 const seedPlayer = async (page: Page) => {
   const wav = Buffer.alloc(44 + 160_000);
   wav.write('RIFF', 0); wav.writeUInt32LE(wav.length - 8, 4); wav.write('WAVEfmt ', 8);
@@ -51,8 +51,42 @@ const seedPlayer = async (page: Page) => {
 
 test.beforeEach(async ({ page }) => {
   await installBaseState(page, { neteaseMode: 'logged-in', preserveNativeMediaQueries: true });
+  await page.addInitScript(() => {
+    // The shared desktop fixture supplies only part of Electron's API. iOS has no Electron bridge.
+    delete (window as Window & { electron?: unknown }).electron;
+    const state = new WeakMap<HTMLMediaElement, { src: string; paused: boolean }>();
+    const media = (element: HTMLMediaElement) => {
+      if (!state.has(element)) state.set(element, { src: '', paused: true });
+      return state.get(element)!;
+    };
+    const nativeSetAttribute = Element.prototype.setAttribute;
+    Element.prototype.setAttribute = function (name, value) {
+      if (this instanceof HTMLMediaElement && name === 'src') { this.src = value; return; }
+      nativeSetAttribute.call(this, name, value);
+    };
+    Object.defineProperties(HTMLMediaElement.prototype, {
+      src: { configurable: true, get() { return media(this).src; }, set(value) { media(this).src = new URL(value, location.href).href; } },
+      currentSrc: { configurable: true, get() { return media(this).src; } },
+      paused: { configurable: true, get() { return media(this).paused; } },
+      duration: { configurable: true, get: () => 10 },
+      readyState: { configurable: true, get: () => 4 },
+      networkState: { configurable: true, get: () => 1 },
+    });
+    HTMLMediaElement.prototype.load = function () { this.dispatchEvent(new Event('loadedmetadata')); };
+    HTMLMediaElement.prototype.play = function () {
+      media(this).paused = false;
+      this.dispatchEvent(new Event('play'));
+      this.dispatchEvent(new Event('playing'));
+      return Promise.resolve();
+    };
+    HTMLMediaElement.prototype.pause = function () {
+      media(this).paused = true;
+      this.dispatchEvent(new Event('pause'));
+    };
+  });
   await mockNeteaseApi(page, 'logged-in');
   await openApp(page);
+  await page.addStyleTag({ content: '[data-testid="dev-library-renderer-switch"] { visibility: hidden !important; }' });
 });
 
 test('portrait home has full-size navigation and a non-zooming search input', async ({ page }) => {
@@ -102,6 +136,7 @@ for (const [orientation, viewport] of Object.entries({ portrait, landscape })) {
     await expectInside(controls, viewport, side);
     const box = (await controls.boundingBox())!;
     expect(box.y + box.height).toBeLessThanOrEqual(viewport.height - bottom);
+    await page.screenshot({ path: `test-results/iphone17pm-${orientation}-playback.png` });
     const handle = page.getByTestId('panel-toggle').getByRole('button');
     await expectTouchTarget(handle);
     await expectInside(handle, viewport, side);
@@ -124,6 +159,7 @@ test('search and settings fit after rotation, with reachable close controls', as
   for (const button of await search.locator('header button').all()) await expectTouchTarget(button);
   await page.setViewportSize(landscape);
   await expectInside(search, landscape);
+  await page.screenshot({ path: 'test-results/iphone17pm-landscape-search.png' });
   await search.getByRole('button', { name: 'Back to Home', exact: true }).tap();
   await expect(search).toBeHidden();
   await page.evaluate(async () => {
@@ -135,6 +171,7 @@ test('search and settings fit after rotation, with reachable close controls', as
   await expect(settings).toBeVisible();
   await expectInside(settings, landscape);
   await expectTouchTarget(settings.getByRole('button', { name: 'Close', exact: true }));
+  await page.screenshot({ path: 'test-results/iphone17pm-landscape-settings.png' });
   await settings.getByRole('button', { name: 'Close', exact: true }).tap();
   await expect(settings).toBeHidden();
   await page.evaluate(async () => {
@@ -147,4 +184,13 @@ test('search and settings fit after rotation, with reachable close controls', as
   await expectInside(palette, landscape);
   for (const button of await palette.locator('.folia-command-header > button').all()) await expectTouchTarget(button);
   await page.screenshot({ path: 'test-results/iphone17pm-landscape-palette.png' });
+});
+
+test('wide desktop keeps the original compact controls and search typography', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1100 });
+  await expect(page.locator('.folia-home-search input')).toHaveCSS('font-size', '14px');
+  expect((await page.locator('.folia-home-settings').boundingBox())!.height).toBeLessThan(44);
+  await seedPlayer(page);
+  await page.locator('.folia-player-controls').getByRole('button', { name: 'Play', exact: true }).tap();
+  await expect(page.locator('.folia-player-expanded')).toBeHidden();
 });

@@ -90,7 +90,7 @@ test.beforeEach(async ({ page }) => {
   await page.addStyleTag({ content: '[data-testid="dev-library-renderer-switch"] { visibility: hidden !important; }' });
 });
 
-test('portrait home has full-size navigation and a non-zooming search input', async ({ page }) => {
+test('竖屏首页保留44点导航与免缩放搜索输入框', async ({ page }) => {
   // Shared fixtures intentionally seed en-US plus an old English preference: native iOS must override both.
   await expect(page.locator('html')).toHaveAttribute('lang', 'zh-CN');
   await expect(page.locator('.folia-home-settings')).toHaveAttribute('title', '选项');
@@ -106,7 +106,7 @@ test('portrait home has full-size navigation and a non-zooming search input', as
   await page.screenshot({ path: 'test-results/iphone17pm-portrait-home.png' });
 });
 
-test('Bravais home also exposes 44-point touch tools', async ({ page }) => {
+test('资料库海报墙首页工具保持44点触控区域', async ({ page }) => {
   await page.evaluate(async () => {
     const path = '/src/library/core/state/useLibrarySuiteStore.ts';
     const { useLibrarySuiteStore } = await import(path);
@@ -121,7 +121,7 @@ test('Bravais home also exposes 44-point touch tools', async ({ page }) => {
 });
 
 for (const [orientation, viewport] of Object.entries({ portrait, landscape })) {
-  test(`${orientation} playback remains tappable while playing and fits the safe viewport`, async ({ page }) => {
+  test(`${orientation === 'portrait' ? '竖屏' : '横屏'}播放控件在播放中保持可点并避开安全区`, async ({ page }) => {
     await page.setViewportSize(viewport);
     // Simulated insets verify notch/home-indicator avoidance; WebKit's emulator reports env() = 0.
     const top = orientation === 'portrait' ? 62 : 0;
@@ -159,7 +159,7 @@ for (const [orientation, viewport] of Object.entries({ portrait, landscape })) {
   });
 }
 
-test('search and settings fit after rotation, with reachable close controls', async ({ page }) => {
+test('搜索与设置旋转后完整显示且关闭按钮可触达', async ({ page }) => {
   await page.locator('.folia-home-search input').fill('fixture');
   await page.locator('.folia-home-search input').press('Enter');
   const search = page.locator('.folia-search-workspace');
@@ -195,11 +195,17 @@ test('search and settings fit after rotation, with reachable close controls', as
   await page.screenshot({ path: 'test-results/iphone17pm-landscape-palette.png' });
 });
 
-test('wide desktop keeps the original compact controls and search typography', async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 1100 });
-  await expect(page.locator('.folia-home-search input')).toHaveCSS('font-size', '14px');
-  expect((await page.locator('.folia-home-settings').boundingBox())!.height).toBeLessThan(44);
-  await seedPlayer(page);
-  await page.locator('.folia-player-controls').getByRole('button', { name: '播放', exact: true }).tap();
-  await expect(page.locator('.folia-player-expanded')).toBeHidden();
+test.describe('桌面布局回归', () => {
+  test.use({ isMobile: false, hasTouch: false, viewport: { width: 1440, height: 1100 } });
+
+  test('宽屏桌面保留紧凑控件与原有搜索字号', async ({ page }) => {
+    expect(await page.evaluate(() => window.matchMedia('(hover: none)').matches)).toBe(false);
+    await expect(page.locator('.folia-home-search input')).toHaveCSS('font-size', '14px');
+    expect((await page.locator('.folia-home-settings').boundingBox())!.height).toBeLessThan(44);
+    await seedPlayer(page);
+    await page.locator('.folia-player-controls').getByRole('button', { name: '播放', exact: true }).click();
+    // A real desktop pointer stays over the button after click; leave the capsule before checking collapse.
+    await page.mouse.move(0, 0);
+    await expect(page.locator('.folia-player-expanded')).toBeHidden();
+  });
 });

@@ -756,7 +756,7 @@ const UnifiedPanel: React.FC<UnifiedPanelProps> = ({
                                 </div>
 
                                 {/* Tab Switcher */}
-                                <div className={`flex ${tabSwitcherBg} p-1 rounded-xl mb-4`}>
+                                <div className={`folia-panel-tabs flex ${tabSwitcherBg} p-1 rounded-xl mb-4`}>
                                     {tabs.map((tab) => (
                                         <button
                                             key={tab.id}
@@ -776,7 +776,7 @@ const UnifiedPanel: React.FC<UnifiedPanelProps> = ({
 
                                 {/* Tab Content */}
                                 <div
-                                    className={`flex-1 pr-1 ${currentTab === 'cover' ? '' : 'min-h-[70px]'}`}
+                                    className={`folia-panel-content flex-1 pr-1 ${currentTab === 'cover' ? '' : 'min-h-[70px]'}`}
                                     style={{ color: 'var(--text-primary)' }}
                                 >
                                     {currentTab === 'cover' && (

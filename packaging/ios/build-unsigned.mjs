@@ -42,7 +42,7 @@ try {
   if (!appInfo.CFBundleExecutable || path.basename(appInfo.CFBundleExecutable) !== appInfo.CFBundleExecutable) {
     throw new Error('应用可执行文件名缺失或格式无效。');
   }
-  run('/usr/bin/lipo', ['-verify_arch', 'arm64', path.join(appDestination, appInfo.CFBundleExecutable)]);
+  run('/usr/bin/lipo', [path.join(appDestination, appInfo.CFBundleExecutable), '-verify_arch', 'arm64']);
   const signature = spawnSync('/usr/bin/codesign', ['-dv', appDestination], { encoding: 'utf8' });
   if (signature.error) throw new Error(`启动签名检查失败（${signature.error.code ?? '未知错误'}）。`);
   if (signature.status === 0 || !`${signature.stdout}${signature.stderr}`.includes('not signed at all')) {

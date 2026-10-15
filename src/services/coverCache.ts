@@ -1,5 +1,6 @@
 import { getFromCache, removeFromCache, saveToCache } from './db';
 import { createSafeObjectUrl, isBlob } from '../utils/blobGuards';
+import { resolveFoliaApiUrl } from './runtimeConfig';
 import {
     clearCoverAssets,
     getCoverAssetUsage,
@@ -27,7 +28,7 @@ const buildCoverRequestUrl = (coverUrl: string): string => {
         if (hostname === 'y.gtimg.cn'
             || hostname === 'kugou.com' || hostname.endsWith('.kugou.com')
             || hostname === 'kgimg.com' || hostname.endsWith('.kgimg.com')) {
-            return `/api/lyric-proxy?url=${encodeURIComponent(coverUrl)}`;
+            return resolveFoliaApiUrl(`/api/lyric-proxy?url=${encodeURIComponent(coverUrl)}`);
         }
     } catch {
         return coverUrl;

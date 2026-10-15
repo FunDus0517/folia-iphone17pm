@@ -1,0 +1,181 @@
+/* src/styles/mobile.css
+ * Phone layout, including iPhone 17 Pro Max (440 × 956 CSS points).
+ * Insets come from WebKit, never from a particular notch or device model.
+ * The desktop/OBS/remote shells retain their existing geometry. */
+@media (max-width: 767px), (pointer: coarse) and (max-width: 1024px) {
+  :root {
+    --folia-safe-top: env(safe-area-inset-top, 0px);
+    --folia-safe-right: env(safe-area-inset-right, 0px);
+    --folia-safe-bottom: env(safe-area-inset-bottom, 0px);
+    --folia-safe-left: env(safe-area-inset-left, 0px);
+    --folia-viewport-height: 100vh;
+    --folia-panel-clearance: 16px;
+  }
+
+  @supports (height: 100dvh) {
+    :root { --folia-viewport-height: 100dvh; }
+  }
+
+  .folia-app-shell {
+    top: var(--folia-safe-top);
+    right: var(--folia-safe-right);
+    bottom: var(--folia-safe-bottom);
+    left: var(--folia-safe-left);
+    width: auto;
+    height: calc(var(--folia-viewport-height) - var(--folia-safe-top) - var(--folia-safe-bottom));
+    overscroll-behavior: none;
+  }
+
+  .folia-home-navigation {
+    max-width: 100%;
+    overflow-x: auto;
+    scale: 1;
+    scrollbar-width: none;
+  }
+
+  .folia-home-navigation button {
+    min-width: 44px;
+    min-height: 44px;
+    padding-inline: 12px;
+    touch-action: manipulation;
+  }
+
+  .folia-home-search input,
+  .folia-search-workspace input,
+  .folia-command-header input {
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  .folia-player-capsule { border-radius: 28px; }
+  .folia-player-collapsed { height: 44px; }
+
+  .folia-player-controls [data-ponder-slot],
+  .folia-player-controls .folia-track-switch {
+    display: inline-flex;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    touch-action: manipulation;
+  }
+
+  .folia-player-controls .folia-track-switch { opacity: 0.8; }
+  .folia-player-back { width: 44px; height: 44px; }
+  .folia-track-title-text { height: 44px; }
+
+  /* Enlarge the seek hit region, not the painted rail or thumb. */
+  .folia-player-controls [data-folium-part="progress.root"] { min-height: 44px; }
+  .folia-player-controls input[type="range"] {
+    top: 50%;
+    bottom: auto;
+    height: 44px;
+    transform: translateY(-50%);
+    touch-action: pan-y;
+  }
+
+  [data-testid="panel-toggle"] {
+    right: var(--folia-safe-right);
+    margin-bottom: var(--folia-safe-bottom);
+  }
+
+  /* The original half-hidden handle is a hover affordance, not a touch affordance. */
+  [data-testid="panel-toggle"] .folia-panel-handle { transform: none; opacity: 1; }
+
+  [data-testid="unified-panel-surface"] {
+    width: min(360px, calc(100vw - var(--folia-safe-left) - var(--folia-safe-right) - 32px));
+    overscroll-behavior: contain;
+  }
+
+  [data-ponder-panel-tab-button] { min-width: 44px; min-height: 44px; }
+
+  .folia-search-workspace {
+    top: var(--folia-safe-top);
+    right: var(--folia-safe-right);
+    bottom: var(--folia-safe-bottom);
+    left: var(--folia-safe-left);
+    height: calc(var(--folia-viewport-height) - var(--folia-safe-top) - var(--folia-safe-bottom));
+  }
+
+  .folia-search-workspace > header button,
+  .folia-search-add-queue,
+  .folia-command-header > button,
+  .folia-settings-close {
+    display: inline-flex;
+    min-width: 44px;
+    min-height: 44px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    touch-action: manipulation;
+  }
+
+  .folia-search-workspace > header form { min-width: 0; }
+  .folia-search-add-queue { opacity: 0.8; }
+
+  .folia-command-overlay,
+  .folia-settings-overlay {
+    padding: calc(var(--folia-safe-top) + 12px) calc(var(--folia-safe-right) + 12px)
+      calc(var(--folia-safe-bottom) + 12px) calc(var(--folia-safe-left) + 12px);
+    height: var(--folia-viewport-height);
+  }
+
+  [data-testid="command-palette-panel"] {
+    display: flex;
+    max-height: calc(var(--folia-viewport-height) - var(--folia-safe-top) - var(--folia-safe-bottom) - 24px);
+    flex-direction: column;
+  }
+
+  .folia-command-header { flex-shrink: 0; gap: 8px; padding: 8px 12px; }
+  [data-testid="command-palette-body"] { min-height: 0; overscroll-behavior: contain; }
+
+  .folia-settings-panel {
+    width: 100%;
+    max-width: 900px;
+    height: 100%;
+    max-height: 100%;
+    padding: 20px;
+  }
+
+  .folia-settings-close { top: 8px; right: 8px; opacity: 0.75; }
+  .folia-settings-panel > .shrink-0 { padding-right: 36px; }
+
+  /* Bravais and Lattice share these existing, deliberately scoped controls. */
+  .lattice-back { width: 44px; height: 44px; }
+  .lattice-tools-action { min-height: 44px; }
+  .lattice-tools-quick-action { height: 44px; }
+  .lattice-tools-slider-icon { width: 44px; height: 44px; }
+  .lattice-tools-panel {
+    width: min(344px, calc(100vw - var(--folia-safe-left) - var(--folia-safe-right) - 32px));
+    max-height: 100%;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .lattice-tools-stack {
+    max-height: calc(var(--folia-viewport-height) - var(--folia-safe-top) - var(--folia-safe-bottom)
+      - var(--wall-tools-bottom, 24px) - 64px - var(--wall-tools-top-reserve));
+  }
+
+  .bravais-seam .bravais-seam-icon,
+  .bravais-seam .bravais-seam-back,
+  .bravais-seam .bravais-seam-home-tab {
+    min-width: 44px;
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+  .bravais-seam-home .bravais-seam-tools { grid-template-columns: repeat(2, 44px); }
+  .bravais-seam-home.is-compact .bravais-seam-tools { grid-template-columns: 44px; }
+}
+
+/* Short, landscape phone windows need a compact cover, not a full-height square. */
+@media (pointer: coarse) and (max-width: 1024px) and (max-height: 540px) and (orientation: landscape) {
+  .folia-panel-cover { width: 112px; height: 112px; min-height: 112px; align-self: center; }
+  [data-testid="unified-panel-surface"] > div { padding: 12px; }
+  .folia-player-expanded { column-gap: 8px; row-gap: 0; }
+  .folia-player-capsule { padding-block: 6px; }
+  [data-testid="command-palette-body"] { height: min(240px, 60dvh); }
+  .folia-settings-panel { padding: 16px; }
+  .folia-settings-panel > .shrink-0 { margin-bottom: 12px; }
+}

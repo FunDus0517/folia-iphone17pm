@@ -390,7 +390,7 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
             {isOpen && (
                 <motion.div
                     data-folia-keyboard-window="true"
-                    className={`fixed inset-0 z-[150] flex items-start justify-center px-4 pt-[18vh] ${hasClearBackdrop ? '' : 'backdrop-blur-md'}`}
+                    className={`folia-command-overlay fixed inset-0 z-[150] flex items-start justify-center px-4 pt-[18vh] ${hasClearBackdrop ? '' : 'backdrop-blur-md'}`}
                     style={{
                         backgroundColor: hasClearBackdrop
                             ? (isDaylight ? 'rgba(250,250,249,0.12)' : 'rgba(0,0,0,0.16)')
@@ -426,7 +426,7 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
                                 color: 'var(--text-primary)',
                             }}
                         >
-                        <div className="flex items-center gap-3 border-b px-4 py-3" style={{ borderColor: isDaylight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.10)' }}>
+                        <div className="folia-command-header flex items-center gap-3 border-b px-4 py-3" style={{ borderColor: isDaylight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.10)' }}>
                             {isExecuting ? (
                                 <Loader2 size={18} className="animate-spin opacity-60 text-zinc-400" />
                             ) : (

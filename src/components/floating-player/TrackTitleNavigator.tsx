@@ -83,7 +83,7 @@ const TrackTitleNavigator: React.FC<TrackTitleNavigatorProps> = ({
                 type="button"
                 aria-label={label}
                 title={target || label}
-                className={arrowClass}
+                className={`folia-track-switch ${arrowClass}`}
                 style={{ color }}
                 onClick={(e) => {
                     // 必须拦住冒泡：胶囊自身的 onClick 会导航到 player 页
@@ -98,7 +98,7 @@ const TrackTitleNavigator: React.FC<TrackTitleNavigatorProps> = ({
     };
 
     return (
-        <div className="group/title relative min-w-0 select-none px-1">
+        <div className="folia-track-title group/title relative min-w-0 select-none px-1">
             {/* 感应区比箭头宽，指针「靠近」箭头即可预览；区内非箭头处的点击不拦截 */}
             <div
                 className={`${zoneClass} left-0 w-14 justify-start pl-1`}
@@ -115,7 +115,7 @@ const TrackTitleNavigator: React.FC<TrackTitleNavigatorProps> = ({
                 {renderArrow('next')}
             </div>
 
-            <div className="pointer-events-none relative h-6">
+            <div className="folia-track-title-text pointer-events-none relative h-6">
                 {/* 整个文字块必须 pointer-events-none：它是 position:relative 且 DOM 序在感应区之后，
                     定位元素后来居上会盖住两侧箭头，导致悬浮和点击全部失效。
                     左右各让出 w-14 也是同一原因——绝对定位相对 padding box，inset-0 会铺到箭头上。 */}

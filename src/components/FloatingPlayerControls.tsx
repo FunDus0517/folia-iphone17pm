@@ -10,6 +10,7 @@ import TrackTitleNavigator from './floating-player/TrackTitleNavigator';
 import PlayerControlSlotButton from './floating-player/PlayerControlSlotButton';
 import PlayerBottomBarPositioner from './floating-player/PlayerBottomBarPositioner';
 import { usePlayerBottomBarBottomPx } from '../hooks/usePlayerBottomBarBottomPx';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 import { playerBottomBarLiveOffset } from '../stores/motionSignals';
 import { usePlayerBottomBarLayoutStore } from '../stores/usePlayerBottomBarLayoutStore';
 import { usePlayerChromeSettingsStore } from '../stores/usePlayerChromeSettingsStore';
@@ -150,7 +151,9 @@ const FloatingPlayerControls: React.FC<FloatingPlayerControlsProps> = ({
 
     const canAutoExpand = canTogglePlay && duration > 0;
     // 定位模式强制展开：用户要看到的是最终形态的胶囊，而不是一条细进度条。
-    const showExpanded = isPositioning || isHovered || (canAutoExpand && playerState !== PlayerState.PLAYING && currentView !== 'home');
+    // Touch has no hover: keep playback actions discoverable even while a song is playing.
+    const isTouchLayout = useMediaQuery('(hover: none) and (pointer: coarse) and (max-width: 1024px)');
+    const showExpanded = isPositioning || isHovered || (canAutoExpand && (isTouchLayout || (playerState !== PlayerState.PLAYING && currentView !== 'home')));
 
     // 上限依赖视口高度，窗口变矮时要跟着收，否则虚线框会画到屏幕外。
     useEffect(() => {
@@ -329,7 +332,7 @@ const FloatingPlayerControls: React.FC<FloatingPlayerControlsProps> = ({
                 所以挂在这一层不会干扰居中。
             */}
             <motion.div
-                className={`absolute left-1/2 -translate-x-1/2 z-60 w-full flex justify-center pointer-events-none
+                className={`folia-player-controls absolute left-1/2 -translate-x-1/2 z-60 w-full flex justify-center pointer-events-none
                     ${currentView === 'home'
                         ? 'max-w-[calc(100vw-120px)] md:max-w-[min(calc(32rem_+_var(--folium-player-bar-extra,0px)),calc(100vw-120px))]'
                         : 'max-w-[min(calc(32rem_+_var(--folium-player-bar-extra,0px)),100vw)] px-4'}`}
@@ -371,7 +374,7 @@ const FloatingPlayerControls: React.FC<FloatingPlayerControlsProps> = ({
                         onPointerUp={handlePositionDragEnd}
                         onPointerCancel={handlePositionDragEnd}
                         style={{ touchAction: isPositioning ? 'none' : undefined }}
-                        className={`backdrop-blur-xl shadow-2xl overflow-hidden rounded-full relative transition-colors duration-300
+                        className={`folia-player-capsule backdrop-blur-xl shadow-2xl overflow-hidden rounded-full relative transition-colors duration-300
                             ${isPositioning ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'}
                             ${showExpanded ? `p-3 ${glassBgExpanded} w-full` : `px-4 py-2 ${glassBgCollapsed} ${COLLAPSED_WIDTH_CLASS}`}`}
                     >
@@ -495,8 +498,9 @@ const ExpandedView: React.FC<ExpandedViewProps> = ({
     slotSecondary,
     slotContext,
 }) => {
+    const { t } = useTranslation();
     return (
-        <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-x-4 gap-y-2 sm:grid-cols-[auto_minmax(0,1fr)_auto]">
+        <div className="folia-player-expanded grid w-full grid-cols-[1fr_auto_1fr] items-center gap-x-4 gap-y-2 sm:grid-cols-[auto_minmax(0,1fr)_auto]">
             {/* Desktop Layout - responsive grid positions apply from the sm breakpoint */}
             {/* Mobile Layout - base grid positions apply below the sm breakpoint */}
             {/* Row 1: Centered Title */}
@@ -531,6 +535,7 @@ const ExpandedView: React.FC<ExpandedViewProps> = ({
                     onTogglePlay();
                 }}
                 disabled={!canTogglePlay || controlsDisabled}
+                aria-label={playerState === PlayerState.PLAYING ? t('ui.pause') : t('ui.play')}
                 className={`col-start-2 row-start-2 flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-none bg-(--text-primary) text-black shadow-lg transition-transform sm:col-start-1 sm:row-start-1 sm:row-span-2 ${controlsDisabled ? 'cursor-not-allowed opacity-45' : 'hover:scale-105'}`}
                 style={{ backgroundColor: primaryColor, color: 'var(--bg-color)' }}
             >
@@ -602,7 +607,7 @@ const CollapsedView: React.FC<CollapsedViewProps> = ({
     controlsDisabled = false,
 }) => {
     return (
-        <div className="flex items-center w-full justify-center h-8 px-4">
+        <div className="folia-player-collapsed flex items-center w-full justify-center h-8 px-4">
             <ProgressBar
                 currentTime={currentTime}
                 duration={duration}

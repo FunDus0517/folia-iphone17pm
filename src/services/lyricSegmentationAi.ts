@@ -1,5 +1,6 @@
 // Plain ESM module shared with the Vercel and Worker runtimes; resolved through allowJs.
 import { buildSegmentationManualPrompt } from '../../shared/lyricSegmentationPrompt.mjs';
+import { resolveFoliaApiUrl } from './runtimeConfig';
 
 // src/services/lyricSegmentationAi.ts
 // Renderer-side entry to lyric word segmentation, mirroring the Electron/web split in gemini.ts:
@@ -64,7 +65,7 @@ const segmentBatch = async (lines: string[], signal?: AbortSignal): Promise<(str
         return assertBoundaries(await bridge.segmentLyrics(lines), lines);
     }
 
-    const response = await fetch('/api/segment-lyrics', {
+    const response = await fetch(resolveFoliaApiUrl('/api/segment-lyrics'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ lines }),

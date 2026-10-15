@@ -1,6 +1,7 @@
 import { NeteaseUser, NeteasePlaylist, NoCopyrightRecommendation, SongPrivilege, SongResult } from "../types";
 import { readProviderSessionValue, removeProviderSessionValue, writeProviderSessionValue } from './onlineMusic/providerStorage';
 import type { PersonalFmRequestOptions } from '../types/onlineMusic';
+import { resolveFoliaApiUrl } from './runtimeConfig';
 import {
   isNeteaseRouteMissingResponse,
   NETEASE_API_BASE_MISSING,
@@ -31,11 +32,11 @@ const isElectronRuntime = () =>
 const getConfiguredApiBase = () => {
   const viteEnv = typeof import.meta !== 'undefined' ? (import.meta as any).env : undefined;
   if (viteEnv && typeof viteEnv.VITE_NETEASE_API_BASE === 'string' && viteEnv.VITE_NETEASE_API_BASE) {
-    return viteEnv.VITE_NETEASE_API_BASE;
+    return resolveFoliaApiUrl(viteEnv.VITE_NETEASE_API_BASE);
   }
 
   if (typeof process !== 'undefined' && typeof process.env.VITE_NETEASE_API_BASE === 'string' && process.env.VITE_NETEASE_API_BASE) {
-    return process.env.VITE_NETEASE_API_BASE;
+    return resolveFoliaApiUrl(process.env.VITE_NETEASE_API_BASE);
   }
 
   return null;

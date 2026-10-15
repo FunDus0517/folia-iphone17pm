@@ -1,0 +1,18 @@
+{
+  "name": "folia-iphone17pm-ios-builder",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=24.0.0" },
+  "scripts": {
+    "test": "node --test build-support.test.mjs",
+    "build:web": "node build-web.mjs",
+    "prepare:ios": "node prepare-ios.mjs",
+    "build:unsigned": "node build-unsigned.mjs"
+  },
+  "dependencies": {
+    "@capacitor/core": "8.5.3",
+    "@capacitor/ios": "8.5.3"
+  },
+  "devDependencies": { "@capacitor/cli": "8.5.3" }
+}

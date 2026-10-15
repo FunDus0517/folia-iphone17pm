@@ -1,4 +1,5 @@
 import md5 from 'blueimp-md5';
+import { resolveFoliaApiUrl } from '../runtimeConfig';
 import { OnlineProviderError } from '../../types/onlineMusic';
 import { readProviderSessionValue, removeProviderSessionValue, writeProviderSessionValue } from './providerStorage';
 
@@ -64,7 +65,7 @@ const getWebApiBase = (): string => {
         ? String(process.env?.VITE_KUGOU_API_BASE || '')
         : '';
     const value = viteValue || processValue;
-    return value.trim().replace(/\/$/, '');
+    return resolveFoliaApiUrl(value.trim().replace(/\/$/, ''));
 };
 
 const isDeviceVerificationRequired = (body: any): boolean => {
@@ -289,7 +290,7 @@ export const requestKugouAnonymousSearch = async (
     Object.entries(params).forEach(([key, value]) => targetUrl.searchParams.set(key, String(value)));
     const requestUrl = typeof window !== 'undefined' && window.electron
         ? targetUrl.toString()
-        : `/api/lyric-proxy?url=${encodeURIComponent(targetUrl.toString())}`;
+        : resolveFoliaApiUrl(`/api/lyric-proxy?url=${encodeURIComponent(targetUrl.toString())}`);
     const response = await fetch(requestUrl, {
         method: 'GET',
         credentials: 'omit',
@@ -378,7 +379,7 @@ export const requestKugouLegacyPlayInfo = async (hash: string): Promise<any> => 
 
     const requestUrl = typeof window !== 'undefined' && window.electron
         ? targetUrlString
-        : `/api/lyric-proxy?url=${encodeURIComponent(targetUrlString)}`;
+        : resolveFoliaApiUrl(`/api/lyric-proxy?url=${encodeURIComponent(targetUrlString)}`);
     const response = await fetch(requestUrl, {
         method: 'GET',
         credentials: 'omit',

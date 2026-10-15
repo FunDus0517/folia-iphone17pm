@@ -1,0 +1,15 @@
+{
+  "appId": "io.github.fundus0517.folia",
+  "appName": "Folia",
+  "webDir": "../../dist",
+  "backgroundColor": "#09090b",
+  "loggingBehavior": "debug",
+  "ios": {
+    "path": "native",
+    "scheme": "App",
+    "contentInset": "never",
+    "preferredContentMode": "mobile",
+    "allowsLinkPreview": false,
+    "backgroundColor": "#09090b"
+  }
+}

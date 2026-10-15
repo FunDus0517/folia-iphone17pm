@@ -1,4 +1,5 @@
 import { OnlineProviderError } from '../../types/onlineMusic';
+import { resolveFoliaApiUrl } from '../runtimeConfig';
 import { readProviderSessionValue, removeProviderSessionValue, writeProviderSessionValue } from './providerStorage';
 
 // src/services/onlineMusic/qqTransport.ts
@@ -64,7 +65,7 @@ const getWebApiBase = (): string => {
         ? String(process.env?.VITE_QQ_API_BASE || '')
         : '';
     const value = viteValue || processValue;
-    return value.trim().replace(/\/$/, '');
+    return resolveFoliaApiUrl(value.trim().replace(/\/$/, ''));
 };
 
 // Electron embeds qq-music-api and starts it on a free port, so the base is only known at runtime.

@@ -267,7 +267,7 @@ export default async function viteConfig(_config: ConfigEnv): Promise<UserConfig
       commandPinyinPlugin(),
       icuFoliaDataPlugin(),
       react(),
-      VitePWA({
+      process.env.VITE_NATIVE_IOS !== 'true' && VitePWA({
         registerType: 'autoUpdate',
         includeAssets: ['icon.svg'],
         devOptions: {

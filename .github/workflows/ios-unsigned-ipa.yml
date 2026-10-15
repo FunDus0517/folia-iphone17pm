@@ -1,0 +1,172 @@
+name: iOS Unsigned IPA
+
+on:
+  workflow_dispatch:
+    inputs:
+      backend_origin:
+        description: 'Optional HTTPS origin of your deployed Folia backend (no /api path)'
+        required: false
+        type: string
+      netease_api_base:
+        description: 'Optional HTTPS NetEase API URL or /api path on backend_origin'
+        required: false
+        type: string
+      kugou_api_base:
+        description: 'Optional HTTPS KuGou API URL or /api path on backend_origin'
+        required: false
+        type: string
+      qq_api_base:
+        description: 'Optional HTTPS QQ API URL or /api/qq on backend_origin'
+        required: false
+        type: string
+      publish_release:
+        description: 'Publish the unsigned IPA and checksums as a GitHub prerelease'
+        required: true
+        default: true
+        type: boolean
+  push:
+    tags:
+      - 'ios-*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-unsigned-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  unsigned-ipa:
+    runs-on: macos-15
+    timeout-minutes: 45
+    permissions:
+      contents: write
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
+      VITE_FOLIA_API_BASE: ${{ inputs.backend_origin || vars.VITE_FOLIA_API_BASE }}
+      VITE_NETEASE_API_BASE: ${{ inputs.netease_api_base || vars.VITE_NETEASE_API_BASE }}
+      VITE_KUGOU_API_BASE: ${{ inputs.kugou_api_base || vars.VITE_KUGOU_API_BASE }}
+      VITE_QQ_API_BASE: ${{ inputs.qq_api_base || vars.VITE_QQ_API_BASE }}
+      VITE_NATIVE_IOS: 'true'
+      IOS_BUILD_NUMBER: ${{ github.run_number }}
+      ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            packaging/ios/package-lock.json
+
+      - name: Check Xcode
+        run: |
+          xcodebuild -version
+          version="$(xcodebuild -version | awk '/Xcode/ { print $2 }')"
+          if [ "${version%%.*}" -lt 26 ]; then
+            echo '::error::Capacitor 8 requires Xcode 26 or newer.'
+            exit 1
+          fi
+
+      - name: Install web dependencies without desktop download scripts
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Install isolated iOS tooling
+        run: npm --prefix packaging/ios ci --no-audit --no-fund
+
+      - name: Test portable iOS build validation
+        run: npm --prefix packaging/ios test
+
+      - name: Typecheck the web application
+        run: npm run typecheck
+
+      - name: Test native API routing and provider regressions
+        run: npm run test:unit -- test/unit/services/nativeApiOrigin.test.ts test/unit/services/runtimeConfig.test.ts test/unit/services/coverCache.test.ts test/unit/onlineMusic/qqTransport.test.ts test/unit/onlineMusic/kugouTransport.test.ts
+
+      - name: Install WebKit for iPhone layout regression
+        run: npx playwright install webkit
+
+      - name: Test iPhone portrait, landscape, and touch controls
+        run: npx playwright test -c playwright.mobile.config.ts
+
+      - name: Build bundled native web assets
+        run: npm --prefix packaging/ios run build:web
+
+      - name: Generate and synchronize the iOS SPM shell
+        run: npm --prefix packaging/ios run prepare:ios
+
+      - name: Archive and verify unsigned IPA
+        id: ipa
+        run: npm --prefix packaging/ios run build:unsigned
+
+      - name: Upload IPA, checksum, and build metadata
+        uses: actions/upload-artifact@v4
+        with:
+          name: Folia-iPhone17PM-unsigned-${{ github.run_number }}
+          if-no-files-found: error
+          retention-days: 30
+          path: |
+            packaging/ios/output/*.ipa
+            packaging/ios/output/*.sha256
+            packaging/ios/output/BUILD-INFO.json
+
+      - name: Publish GitHub prerelease
+        if: startsWith(github.ref, 'refs/tags/ios-') || inputs.publish_release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          TAG_NAME: ${{ github.ref_name }}
+          SOURCE_SHA: ${{ github.sha }}
+          BUILD_NUMBER: ${{ github.run_number }}
+          REPOSITORY: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = push ]; then
+            tag="$TAG_NAME"
+          else
+            tag="ios-build-${BUILD_NUMBER}"
+          fi
+          cat > "$RUNNER_TEMP/ios-release-notes.md" <<'NOTES'
+          ## Folia for iPhone 17 Pro Max
+
+          This is an **unsigned arm64 IPA** built from the source commit attached to this release.
+          Sign it with your own Apple identity before installing it. It is not an App Store build.
+
+          - Includes iPhone safe-area, portrait/landscape and touch-target adaptations.
+          - Bundles the web assets locally; no remote web app is silently substituted.
+          - Does not bundle a Node.js music backend. Online services depend on the API URLs configured for this build.
+          - See `BUILD-INFO.json` for the backend configuration state and SHA-256 value.
+          - See `docs/IOS-BUILD.md` in the source repository for build, signing and verification notes.
+          NOTES
+          if ! gh release view "$tag" --repo "$REPOSITORY" >/dev/null 2>&1; then
+            gh release create "$tag" --repo "$REPOSITORY" --target "$SOURCE_SHA" \
+              --title "Folia iPhone 17 Pro Max — unsigned build ${BUILD_NUMBER}" \
+              --prerelease --notes-file "$RUNNER_TEMP/ios-release-notes.md"
+          fi
+          gh release upload "$tag" packaging/ios/output/*.ipa \
+            packaging/ios/output/*.sha256 packaging/ios/output/BUILD-INFO.json \
+            --repo "$REPOSITORY" --clobber
+
+      - name: Summarize the actual build result
+        if: success()
+        env:
+          IPA_NAME: ${{ steps.ipa.outputs.ipa_name }}
+        run: |
+          {
+            echo '## Unsigned iOS package'
+            echo "- File: \`${IPA_NAME}\`"
+            echo '- Architecture: arm64, real iPhone device archive'
+            echo '- Signing: not signed; user signing is required before installation'
+            if [ -n "$VITE_FOLIA_API_BASE" ]; then
+              echo '- Folia backend origin: configured (see BUILD-INFO.json)'
+            else
+              echo '- Folia backend origin: not configured; online API features need a configured backend'
+            fi
+            echo '- ZIP, Info.plist, arm64 and unsigned-state checks passed in this workflow'
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,7 +1,7 @@
 import { DualTheme } from "../types";
 import { applyStoredAnimationIntensityToDualTheme } from "./themePreferences";
 import { sanitizeDualTheme } from "./themeSanitizer";
-import { getWebAiProvider } from "./runtimeConfig";
+import { getWebAiProvider, resolveFoliaApiUrl } from "./runtimeConfig";
 
 const getErrorMessage = (error: unknown) => {
   if (error instanceof Error) {
@@ -30,7 +30,7 @@ export const generateThemeFromLyrics = async (
     const provider = getWebAiProvider();
     const endpoint = provider === 'openai' ? '/api/generate-theme_openai' : '/api/generate-theme';
 
-    const response = await fetch(endpoint, {
+    const response = await fetch(resolveFoliaApiUrl(endpoint), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -69,7 +69,7 @@ export const generateObsThemeFromLyrics = async (
 ): Promise<DualTheme> => {
   const endpoint = aiConfig.provider === 'openai' ? '/api/generate-theme_openai' : '/api/generate-theme';
 
-  const response = await fetch(endpoint, {
+  const response = await fetch(resolveFoliaApiUrl(endpoint), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ lyricsText, ...(options ?? {}) }),

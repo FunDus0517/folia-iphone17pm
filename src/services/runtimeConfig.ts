@@ -2,6 +2,21 @@
 
 export type WebAiProvider = 'gemini' | 'openai';
 
+/** Resolve same-origin Web API paths against the explicitly configured native backend. */
+export const resolveFoliaApiUrl = (requestPath: string): string => {
+    const configuredOrigin = String(import.meta.env.VITE_FOLIA_API_BASE ?? '').trim();
+    if (!configuredOrigin || !requestPath.startsWith('/') || requestPath.startsWith('//')) {
+        return requestPath;
+    }
+
+    const origin = new URL(configuredOrigin);
+    if (origin.protocol !== 'https:' || origin.username || origin.password
+        || origin.pathname !== '/' || origin.search || origin.hash) {
+        throw new Error('VITE_FOLIA_API_BASE must be a credential-free HTTPS origin without a path.');
+    }
+    return new URL(requestPath, origin.origin).toString();
+};
+
 const normalizeAiProvider = (value: unknown): WebAiProvider => (
     value === 'openai' ? 'openai' : 'gemini'
 );

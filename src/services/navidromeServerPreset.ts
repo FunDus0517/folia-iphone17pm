@@ -1,4 +1,5 @@
 import type { NavidromeConfig } from '../types/navidrome';
+import { resolveFoliaApiUrl } from './runtimeConfig';
 import {
     clearNavidromeServerProfile,
     getNavidromeConfig,
@@ -49,7 +50,7 @@ const requestPreset = async (): Promise<NavidromeServerPreset | null> => {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), NAVIDROME_PRESET_REQUEST_TIMEOUT_MS);
     try {
-        const response = await fetch(PRESET_ENDPOINT, { cache: 'no-store', signal: controller.signal });
+        const response = await fetch(resolveFoliaApiUrl(PRESET_ENDPOINT), { cache: 'no-store', signal: controller.signal });
         if (!response.ok) return null;
         const body = await response.json() as Partial<NavidromeServerPreset> & { configured?: boolean };
         if (!body.configured || !body.serverUrl || !body.username || !body.password) return null;

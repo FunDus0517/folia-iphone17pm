@@ -143,7 +143,7 @@ const SearchResultRow: React.FC<SearchResultRowProps> = ({
                     <button
                         type="button"
                         onClick={() => onAddTrackToQueue(track)}
-                        className="shrink-0 rounded-full p-2 opacity-60 transition-all hover:bg-black/10 hover:opacity-100 dark:hover:bg-white/10 sm:opacity-0 sm:group-hover:opacity-100"
+                        className="folia-search-add-queue shrink-0 rounded-full p-2 opacity-60 transition-all hover:bg-black/10 hover:opacity-100 dark:hover:bg-white/10 sm:opacity-0 sm:group-hover:opacity-100"
                         title={t('navidrome.addToQueue')}
                     >
                         <Plus size={16} />

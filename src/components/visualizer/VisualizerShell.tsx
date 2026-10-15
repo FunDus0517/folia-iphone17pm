@@ -10,6 +10,7 @@ import { getSizedCoverUrl } from '../../utils/coverUrl';
 import { FoliumStageLayerSlot } from '../../mods/folium/registries/stageLayers';
 import VideoLayer from './videoLayer/VideoLayer';
 import { isMainAppSurface } from '../../utils/appSurface';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 
 // Shared outer shell for all visualizers.
 // This is where we keep background layering, font injection, and the hover-only back button
@@ -74,7 +75,8 @@ const VisualizerShell = forwardRef<HTMLDivElement, VisualizerShellProps>(({
     const resolvedOnBack = sharedProps?.onBack;
     const resolvedIsPanelOpen = sharedProps?.isPanelOpen ?? false;
     const onPlayerPanelGuideHotspotChange = sharedProps?.onPlayerPanelGuideHotspotChange;
-    const isBackButtonVisible = sharedProps?.alwaysShowBackButton || showBackButton;
+    const isTouchLayout = useMediaQuery('(hover: none) and (pointer: coarse) and (max-width: 1024px)');
+    const isBackButtonVisible = sharedProps?.alwaysShowBackButton || showBackButton || isTouchLayout;
     const showStageLayers = !sharedProps?.isPreviewMode && !resolvedStaticMode;
 
     const updatePlayerPanelGuideHotspot = (isActive: boolean) => {
@@ -175,7 +177,7 @@ const VisualizerShell = forwardRef<HTMLDivElement, VisualizerShellProps>(({
                         event.stopPropagation();
                         resolvedOnBack();
                     }}
-                    className="absolute top-6 left-6 z-30 h-10 w-10 rounded-full flex items-center justify-center transition-colors backdrop-blur-md bg-black/20 hover:bg-white/10 text-white/60 pointer-events-auto"
+                    className="folia-player-back absolute top-6 left-6 z-30 h-10 w-10 rounded-full flex items-center justify-center transition-colors backdrop-blur-md bg-black/20 hover:bg-white/10 text-white/60 pointer-events-auto"
                     style={{ pointerEvents: isBackButtonVisible ? 'auto' : 'none' }}
                 >
                     <ChevronLeft size={20} />

@@ -252,7 +252,7 @@ const UnifiedPanel: React.FC<UnifiedPanelProps> = ({
     const bottomBarBottomPx = usePlayerBottomBarBottomPx();
     const panelMaxHeight = useTransform(
         bottomBarBottomPx,
-        bottom => `calc(100dvh - ${bottom + 64}px)`,
+        bottom => `calc(100dvh - ${bottom + 64}px - var(--folia-safe-top, 0px) - var(--folia-safe-bottom, 0px) - var(--folia-panel-clearance, 0px))`,
     );
     const likeAvailability = resolveLikeAvailability(currentSong, playbackControlsDisabled, isStage);
     const likeDisabledReason = likeAvailability.reason
@@ -647,7 +647,7 @@ const UnifiedPanel: React.FC<UnifiedPanelProps> = ({
                                             setIsCoverActionsVisible(prev => !prev);
                                         }
                                     }}
-                                    className={`w-full aspect-square rounded-2xl overflow-hidden shadow-lg relative mb-4 ${placeholderBg} flex items-center justify-center group cursor-pointer`}
+                                    className={`folia-panel-cover w-full aspect-square rounded-2xl overflow-hidden shadow-lg relative mb-4 ${placeholderBg} flex items-center justify-center group cursor-pointer`}
                                 >
                                     {coverUrl ? (
                                         <img src={getSizedCoverUrl(coverUrl, 512)} alt="Art" decoding="async" className="w-full h-full object-cover" />
@@ -972,7 +972,7 @@ const UnifiedPanel: React.FC<UnifiedPanelProps> = ({
                         onPointerDown={handleToggleHotspotPointerDown}
                     >
                         {/* Wrapper for both track and button to guarantee perfect alignment across browsers */}
-                        <div className={`relative w-12 h-12 transition-all duration-300 transform ${toggleButtonMotionClass}`}>
+                        <div className={`folia-panel-handle relative w-12 h-12 transition-all duration-300 transform ${toggleButtonMotionClass}`}>
                             {/* osu! Slider Track */}
                             <div
                                 style={{

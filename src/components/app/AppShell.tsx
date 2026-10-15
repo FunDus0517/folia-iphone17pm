@@ -90,7 +90,7 @@ const AppShell: React.FC<AppShellProps> = ({
 
     return (
         <div
-            className="fixed inset-0 w-full h-full flex flex-col overflow-hidden font-sans transition-colors duration-500"
+            className="folia-app-shell fixed inset-0 w-full h-full flex flex-col overflow-hidden font-sans transition-colors duration-500"
             style={{
                 ...appStyle,
                 borderRadius: shouldApplyWindowRadius ? '18px' : undefined,

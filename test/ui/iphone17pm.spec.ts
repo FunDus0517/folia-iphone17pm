@@ -203,9 +203,14 @@ test.describe('桌面布局回归', () => {
     await expect(page.locator('.folia-home-search input')).toHaveCSS('font-size', '14px');
     expect((await page.locator('.folia-home-settings').boundingBox())!.height).toBeLessThan(44);
     await seedPlayer(page);
-    await page.locator('.folia-player-controls').getByRole('button', { name: '播放', exact: true }).click();
-    // A real desktop pointer stays over the button after click; leave the capsule before checking collapse.
+    // This is a non-hover layout check; the five phone cases exercise real tap interactions.
     await page.mouse.move(0, 0);
+    expect(await page.locator('.folia-player-capsule').evaluate(el => el.matches(':hover'))).toBe(false);
+    await page.evaluate(async () => {
+      const path = '/src/stores/usePlaybackStore.ts';
+      const { usePlaybackStore } = await import(path);
+      usePlaybackStore.setState({ playerState: 'PLAYING' });
+    });
     await expect(page.locator('.folia-player-expanded')).toBeHidden();
   });
 });

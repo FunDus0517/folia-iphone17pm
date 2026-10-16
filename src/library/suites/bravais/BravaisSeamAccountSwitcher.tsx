@@ -7,6 +7,7 @@ import type { BravaisHomeAccount } from './bravaisHomeModels';
 import { resolveBravaisAccountPopMotion } from './bravaisAccountMotion';
 import { closeBravaisHomePopover, setBravaisHomeOpenRequest, setBravaisHomePopover, useBravaisHomeUiStore } from './bravaisHomeUiStore';
 import BravaisProviderAvatar from './BravaisProviderAvatar';
+import { openSettings } from '../../../stores/useSettingsModalStore';
 import './bravaisAccount.css';
 
 // src/library/suites/bravais/BravaisSeamAccountSwitcher.tsx
@@ -122,18 +123,21 @@ const BravaisAccountList: React.FC<{
                         type="button"
                         role="menuitemradio"
                         aria-checked={row.current}
-                        disabled={!row.configured}
-                        aria-label={describeRow(row)}
+                        disabled={!row.configured && import.meta.env.VITE_NATIVE_IOS !== 'true'}
+                        aria-label={!row.configured && import.meta.env.VITE_NATIVE_IOS === 'true' ? `配置音乐服务 · ${row.label}` : describeRow(row)}
                         title={describeRow(row)}
+                        data-native-config-provider={!row.configured && import.meta.env.VITE_NATIVE_IOS === 'true' ? row.providerId : undefined}
                         onClick={() => {
                             onClose();
-                            account.onSelect(row.providerId);
+                            if (!row.configured) {
+                                if (import.meta.env.VITE_NATIVE_IOS === 'true') openSettings('options', 'integration');
+                            } else account.onSelect(row.providerId);
                         }}
                     >
                         <BravaisProviderAvatar providerId={row.providerId} name={row.label} avatarUrl={row.avatarUrl} />
                         <span className="is-text">
                             <span className="is-name">{row.label}</span>
-                            {row.note && <span className="is-note">{row.note}</span>}
+                            {row.note && <span className="is-note">{!row.configured && import.meta.env.VITE_NATIVE_IOS === 'true' ? '配置音乐服务' : row.note}</span>}
                         </span>
                         {row.configured && !row.direct && <LogIn aria-hidden className="is-login" />}
                     </button>

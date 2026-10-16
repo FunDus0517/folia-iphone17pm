@@ -9,6 +9,7 @@ import type { ProviderAccountSummary } from '@/types/onlineMusic';
 // test/unit/onlineMusic/providerVisibility.test.ts — runtime-only providers should not appear in the Web UI.
 
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
+vi.mock('@/stores/useSettingsModalStore', () => ({ openSettings: vi.fn() }));
 afterEach(() => vi.unstubAllGlobals());
 const providers = [
     { providerId: 'bodian', displayName: '波点音乐', shortName: '波点', availability: { configured: false, reason: 'runtime-unavailable' } },

@@ -28,6 +28,7 @@ import { translateHomeMessage } from '../../core/model/homeSources';
 export type BravaisLoginQr =
     | { kind: 'image'; url: string }
     | { kind: 'loading' }
+    | { kind: 'error'; text: string }
     | { kind: 'choose-method'; text: string }
     | { kind: 'backend-failure'; title: string; detail: string | null };
 
@@ -149,7 +150,9 @@ export const projectBravaisLoginForm = (view: LibraryLoginView, features: Bravai
             ? { kind: 'choose-method', text: methodStep.pending }
             : session.qrImageUrl
                 ? { kind: 'image', url: session.qrImageUrl }
-                : { kind: 'loading' };
+                : session.phase === 'error' || session.phase === 'expired'
+                    ? { kind: 'error', text: view.status ?? '' }
+                    : { kind: 'loading' };
     const canOfferRetry = (session.phase === 'expired' || session.phase === 'error') && !awaitingMethod && !backendFailure;
     return {
         kind: 'login',

@@ -74,7 +74,7 @@ const OnlineProviderLoginModal = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
-            className="absolute inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-xl p-4"
+            className="folia-login-overlay absolute inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-xl p-4"
             role="dialog"
             aria-modal="true"
             aria-label={title}
@@ -85,18 +85,21 @@ const OnlineProviderLoginModal = ({
                 exit={{ scale: 0.92, opacity: 0, y: 12 }}
                 transition={{ type: 'spring', bounce: 0, duration: 0.5 }}
                 // 失败后加宽成两栏；矮窗口里放不下时在卡片内滚动，而不是被上下裁掉。
-                className={`bg-zinc-900/90 border border-white/10 p-8 rounded-3xl w-full max-h-full overflow-y-auto text-center relative shadow-2xl ${twoColumns ? 'max-w-3xl' : 'max-w-sm'}`}
+                className={`folia-login-card bg-zinc-900/90 border border-white/10 p-8 rounded-3xl w-full max-h-full overflow-y-auto text-center relative shadow-2xl ${twoColumns ? 'max-w-3xl' : 'max-w-sm'}`}
             >
+                <div className="folia-login-header">
                 <button
                     type="button"
                     onClick={onClose}
                     aria-label={closeLabel}
-                    className="absolute top-4 right-4 opacity-40 hover:opacity-100 rounded-full bg-white/5 p-1 transition-colors cursor-pointer"
+                    className="folia-login-close absolute top-4 right-4 opacity-40 hover:opacity-100 rounded-full bg-white/5 p-1 transition-colors cursor-pointer"
                     style={{ color: 'var(--text-primary)' }}
                 >
                     <X size={16} />
                 </button>
                 <h3 className="text-lg font-bold mb-6" style={{ color: 'var(--text-primary)' }}>{title}</h3>
+                </div>
+                <div className="folia-login-body">
                 {loginMethods && (
                     <div className="mb-5">
                         <p className="text-[10px] font-semibold uppercase tracking-[0.16em] opacity-45 mb-1.5" style={{ color: 'var(--text-secondary)' }}>
@@ -131,7 +134,7 @@ const OnlineProviderLoginModal = ({
                         </div>
                     </div>
                 )}
-                <div className={twoColumns ? 'flex flex-col items-center gap-6 sm:flex-row sm:items-start' : 'flex flex-col items-center'}>
+                <div className={`folia-login-columns ${twoColumns ? 'flex flex-col items-center gap-6 sm:flex-row sm:items-start' : 'flex flex-col items-center'}`}>
                     {/* 左栏：二维码（或后端故障原因）、状态行、重启 / 重试。 */}
                     <div className={`flex flex-col items-center ${twoColumns ? 'w-full sm:w-48 sm:shrink-0' : ''}`}>
                         <div className="relative inline-block bg-white p-2 rounded-xl mb-4 shadow-inner">
@@ -151,6 +154,11 @@ const OnlineProviderLoginModal = ({
                                 </div>
                             ) : qrCodeImg ? (
                                 <img src={qrCodeImg} alt="QR Code" className="w-40 h-40" />
+                            ) : state === 'error' || state === 'expired' ? (
+                                <div data-login-qr-error className="w-40 h-40 flex flex-col items-center justify-center gap-2 rounded-lg px-3 text-xs text-red-600">
+                                    <AlertTriangle size={24} aria-hidden />
+                                    <span>{statusText}</span>
+                                </div>
                             ) : (
                                 <div className="w-40 h-40 flex items-center justify-center bg-gray-100 rounded-lg">
                                     <Loader2 className="animate-spin text-gray-400" size={24} />
@@ -194,6 +202,7 @@ const OnlineProviderLoginModal = ({
                     )}
                 </div>
                 <p className="text-[10px] opacity-30 mt-6" style={{ color: 'var(--text-secondary)' }}>{note}</p>
+                </div>
             </motion.div>
         </motion.div>
     );

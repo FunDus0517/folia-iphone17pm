@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import type { OnlineProviderId } from '../../../types/onlineMusic';
 import type { BravaisLoginFailureHelp, BravaisLoginSelfCheck } from './bravaisAccountModel';
 import type { BravaisAccountActions } from './bravaisAccountStore';
+import { isNativeMusicRuntime } from '../../../services/nativeMusicConfig';
 
 // src/library/suites/bravais/BravaisLoginFailureHelp.tsx
 // 缝里登录态的失败帮助（account-login-diagnostics，设计稿 §10.7）：缝只有 300px 宽，二维码下面一栏排下来，
@@ -86,7 +87,7 @@ const BravaisLoginFailureHelpView: React.FC<{
                 </button>
                 {expanded && (
                     <div className="bravais-login-diagnostics" data-bravais-login-diagnostics>
-                        <p>{help.escalation.prompt}</p>
+                        <p>{isNativeMusicRuntime() ? t('nativeMusicServices.loginFailureHint') : help.escalation.prompt}</p>
                         <p className="is-soft" data-bravais-login-disclosure>{t('home.qrDiagnosticsDisclosure')}</p>
                         <span className="bravais-login-diagnostics-buttons">
                             <button type="button" className="bravais-chrome-button is-primary" data-bravais-form-action="copy-diagnostics"

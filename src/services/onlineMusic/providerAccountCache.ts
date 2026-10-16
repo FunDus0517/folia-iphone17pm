@@ -1,6 +1,7 @@
 import type { MediaId, OnlineProviderId, ProviderCollection, ProviderUser } from '../../types/onlineMusic';
 import { getFromCache, removeFromCache, saveToCache } from '../db';
 import { getProviderCacheKey } from './providerStorage';
+import { getNativeMusicApiBase, isNativeMusicProvider, isNativeMusicRuntime } from '../nativeMusicConfig';
 
 // src/services/onlineMusic/providerAccountCache.ts
 
@@ -13,6 +14,7 @@ export type ProviderAccountSnapshot = {
     user: ProviderUser;
     collections: ProviderCollection[];
     likedSongIds: MediaId[];
+    apiBase?: string;
 };
 
 const isUsableMediaId = (value: unknown): value is MediaId => (
@@ -28,6 +30,8 @@ export const loadProviderAccountSnapshot = async (
 ): Promise<ProviderAccountSnapshot | null> => {
     const cached = await getFromCache<ProviderAccountSnapshot>(getProviderAccountSnapshotCacheKey(providerId));
     if (!cached || cached.version !== SNAPSHOT_VERSION || !cached.user) return null;
+    if (isNativeMusicRuntime() && isNativeMusicProvider(providerId)
+        && cached.apiBase !== getNativeMusicApiBase(providerId)) return null;
     if (!Array.isArray(cached.collections) || !Array.isArray(cached.likedSongIds)) return null;
     // 歌单内行号（KuGou fileid）只在本次会话有效，旧版本写进来的一律不还原，由刷新重建。
     const { likedSongFileIds: _sessionScopedRowIds, ...snapshot } = cached as ProviderAccountSnapshot & {
@@ -46,6 +50,8 @@ export const saveProviderAccountSnapshot = async (
         version: SNAPSHOT_VERSION,
         savedAt: Date.now(),
         ...snapshot,
+        ...(isNativeMusicRuntime() && isNativeMusicProvider(providerId)
+            ? { apiBase: getNativeMusicApiBase(providerId) } : {}),
     };
     await saveToCache(getProviderAccountSnapshotCacheKey(providerId), value);
     return value;

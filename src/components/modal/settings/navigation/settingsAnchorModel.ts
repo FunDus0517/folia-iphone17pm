@@ -46,6 +46,7 @@ export const SETTINGS_ANCHOR_DEFINITIONS = {
 
     // IntegrationSettingsSubview — stageMode is declared twice on purpose, the Electron and web
     // panels being mutually exclusive; it is still one destination.
+    nativeMusicServices: { section: 'integration', labelKey: 'nativeMusicServices.title', nativeOnly: true },
     discordRichPresence: { section: 'integration', labelKey: 'options.discordRichPresence', electronOnly: true },
     obsBrowserSource: { section: 'integration', labelKey: 'options.obsBrowserSource', electronOnly: true },
     lyricApi: { section: 'integration', labelKey: 'options.lyricApi', electronOnly: true },
@@ -75,7 +76,7 @@ export const SETTINGS_ANCHOR_DEFINITIONS = {
     // LabSettingsModal
     labPlayerUi: { section: 'lab', labelKey: 'options.labPlayerUiSection' },
     labWindowAndTools: { section: 'lab', labelKey: 'options.labWindowAndToolsSection' },
-} as const satisfies Record<string, { section: SettingsSubviewId; labelKey: string; electronOnly?: boolean; requiresLibrarySuiteChoice?: boolean; requiresBravaisSuite?: boolean }>;
+} as const satisfies Record<string, { section: SettingsSubviewId; labelKey: string; electronOnly?: boolean; nativeOnly?: boolean; requiresLibrarySuiteChoice?: boolean; requiresBravaisSuite?: boolean }>;
 
 export type SettingsAnchorId = keyof typeof SETTINGS_ANCHOR_DEFINITIONS;
 

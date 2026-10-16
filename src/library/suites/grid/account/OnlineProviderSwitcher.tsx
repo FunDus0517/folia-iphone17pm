@@ -6,6 +6,7 @@ import type { OnlineProviderId, ProviderAccountSummary } from '../../../../types
 import { canSwitchToProviderDirectly } from '../../../core/model/onlineProviderAccountView';
 import { canLogoutProvider } from '../../../core/model/accountRules';
 import { playerBottomBarLiveOffset } from '../../../../stores/motionSignals';
+import { openSettings } from '../../../../stores/useSettingsModalStore';
 import {
     PLAYER_BOTTOM_BAR_BASE_OFFSET_PX,
     resolvePlayerBottomComponentBottomPx,
@@ -216,14 +217,21 @@ const OnlineProviderSwitcher: React.FC<OnlineProviderSwitcherProps> = ({
                             return (
                                 <div
                                     key={provider.providerId}
-                                    className={`mb-1 flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition-colors last:mb-0 ${active ? (isDaylight ? 'bg-black/5' : 'bg-white/8') : ''} ${configured ? (isDaylight ? 'hover:bg-black/8' : 'hover:bg-white/12') : 'cursor-not-allowed opacity-40'}`}
+                                    className={`mb-1 flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition-colors last:mb-0 ${active ? (isDaylight ? 'bg-black/5' : 'bg-white/8') : ''} ${configured || import.meta.env.VITE_NATIVE_IOS === 'true' ? (isDaylight ? 'hover:bg-black/8' : 'hover:bg-white/12') : 'cursor-not-allowed opacity-40'}`}
                                 >
                                     <button
                                         type="button"
                                         role="menuitemradio"
                                         aria-checked={active}
-                                        disabled={!configured}
+                                        disabled={!configured && import.meta.env.VITE_NATIVE_IOS !== 'true'}
+                                        aria-label={!configured && import.meta.env.VITE_NATIVE_IOS === 'true' ? `配置音乐服务 · ${provider.shortName}` : undefined}
+                                        data-native-config-provider={!configured && import.meta.env.VITE_NATIVE_IOS === 'true' ? provider.providerId : undefined}
                                         onClick={() => {
+                                            if (!configured) {
+                                                setOpen(false);
+                                                if (import.meta.env.VITE_NATIVE_IOS === 'true') openSettings('options', 'integration');
+                                                return;
+                                            }
                                             onSelect(provider);
                                             if (canSwitchToProviderDirectly(provider)) setOpen(false);
                                         }}
@@ -240,7 +248,7 @@ const OnlineProviderSwitcher: React.FC<OnlineProviderSwitcherProps> = ({
                                             <span className="mt-0.5 block truncate text-[11px] opacity-45">{provider.displayName}</span>
                                             <span className="mt-1 block truncate text-xs opacity-65">
                                                 {!configured
-                                                    ? t('home.providerNotConfigured')
+                                                    ? import.meta.env.VITE_NATIVE_IOS === 'true' ? '配置音乐服务' : t('home.providerNotConfigured')
                                                     : accountless
                                                         ? t('home.providerNoAccount')
                                                         : provider.user?.nickname || t('home.providerNotLoggedIn')}

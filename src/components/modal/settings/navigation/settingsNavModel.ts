@@ -1,5 +1,6 @@
 import { Boxes, Command, Database, FlaskConical, Gauge, Keyboard, Languages, PlayCircle, Server, Sparkles, Terminal, type LucideIcon } from 'lucide-react';
 import { SETTINGS_ANCHOR_DEFINITIONS, type SettingsAnchorId } from './settingsAnchorModel';
+import { isNativeMusicRuntime } from '../../../../services/nativeMusicConfig';
 // src/components/modal/settings/navigation/settingsNavModel.ts
 // Single source of truth for the options-tab sections: sidebar order, grouping, titles and descriptions.
 
@@ -122,6 +123,7 @@ export const buildSettingsNavGroups = (
                         .filter(([, definition]) => (
                             definition.section === section.id
                             && (!('electronOnly' in definition) || !definition.electronOnly || options.isElectron)
+                            && (!('nativeOnly' in definition) || !definition.nativeOnly || isNativeMusicRuntime())
                             && (!('requiresLibrarySuiteChoice' in definition) || !definition.requiresLibrarySuiteChoice || Boolean(options.hasLibrarySuiteChoice))
                             && (!('requiresBravaisSuite' in definition) || !definition.requiresBravaisSuite || Boolean(options.isBravaisSuiteActive))
                         ))

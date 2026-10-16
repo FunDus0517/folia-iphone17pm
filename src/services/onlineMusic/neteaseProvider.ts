@@ -17,6 +17,7 @@ import { parseNeteaseChorusRanges, processNeteaseLyrics } from '../../utils/lyri
 import { toFiniteNumber } from '../../utils/replayGain';
 import { createProviderSongMetadata } from '../../utils/songMetadata';
 import { getNeteaseRemoteApiBase, neteaseApi } from '../netease';
+import { getNativeMusicApiBase, isNativeMusicRuntime } from '../nativeMusicConfig';
 import { readProviderSessionValue, writeProviderSessionValue } from './providerStorage';
 import {
     classifyNeteaseSongUrlResponse,
@@ -282,7 +283,8 @@ export const neteaseProvider: OnlineMusicProvider = {
     id: 'netease',
     displayName: 'NetEase Cloud Music',
     shortName: '网易云',
-    getAvailability: () => ({ configured: true }),
+    getAvailability: () => (!isNativeMusicRuntime() || Boolean(getNativeMusicApiBase('netease'))
+        ? { configured: true } : { configured: false, reason: 'not-configured' }),
     capabilities: {
         search: true,
         playback: true,

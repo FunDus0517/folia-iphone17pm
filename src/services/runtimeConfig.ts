@@ -1,10 +1,14 @@
 // 当前文件：读取 Docker 注入的 Web 运行时配置，并兼容既有 Vite 构建变量。
 
+import { isNativeMusicRuntime, readNativeMusicConfig } from './nativeMusicConfig';
+
 export type WebAiProvider = 'gemini' | 'openai';
 
 /** Resolve same-origin Web API paths against the explicitly configured native backend. */
 export const resolveFoliaApiUrl = (requestPath: string): string => {
-    const configuredOrigin = String(import.meta.env.VITE_FOLIA_API_BASE ?? '').trim();
+    const configuredOrigin = isNativeMusicRuntime()
+        ? readNativeMusicConfig().backendOrigin
+        : String(import.meta.env.VITE_FOLIA_API_BASE ?? '').trim();
     if (!configuredOrigin || !requestPath.startsWith('/') || requestPath.startsWith('//')) {
         return requestPath;
     }

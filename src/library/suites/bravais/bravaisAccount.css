@@ -21,6 +21,7 @@
     justify-content: space-between;
     gap: 8px;
 }
+.bravais-account-scroll { display: contents; }
 
 .bravais-account-head .bravais-form-title { font-size: 19px; }
 
@@ -90,6 +91,8 @@
 
 .bravais-login-qr img { display: block; width: 200px; height: 200px; }
 .bravais-login-qr > svg { width: 24px; height: 24px; }
+.bravais-login-qr-error { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px; color: #b91c1c; font-size: 12px; text-align: center; overflow-wrap: anywhere; }
+.bravais-login-qr-error svg { width: 24px; height: 24px; flex: none; }
 
 .bravais-login-qr.is-choose-method span {
     display: grid;

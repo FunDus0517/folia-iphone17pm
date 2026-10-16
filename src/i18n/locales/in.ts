@@ -1,6 +1,33 @@
 
 
 export default {
+  "nativeMusicServices": {
+    "loginFailureHint": "Kode QR dibuat oleh API musik yang Anda konfigurasi. Periksa alamat dan koneksinya di Pengaturan → Integrasi → Koneksi layanan musik. Menyegarkan kode atau mengganti jaringan tidak menyediakan layanan yang belum ada. Respons API belum membuktikan login atau pemutaran.",
+    "title": "Koneksi layanan musik",
+    "description": "Paket ini tidak menyertakan API musik NetEase, QQ, atau KuGou. Masukkan API kompatibel yang Anda kelola atau percayai. Pengaturan disimpan di ponsel ini.",
+    "websiteHint": "Jangan masukkan music.163.com, y.qq.com, atau situs KuGou. Situs musik bukan alamat API yang kompatibel.",
+    "fields": { "neteaseApiBase": "API NetEase Music", "qqApiBase": "API QQ Music", "kugouApiBase": "API KuGou Music", "backendOrigin": "Origin layanan Folia (opsional)" },
+    "providerHint": "Masukkan alamat API HTTPS lengkap beserta jalurnya jika perlu, atau tentukan jalur relatif terhadap origin Folia di bawah. Biarkan kosong jika penyedia belum dikonfigurasi.",
+    "backendHint": "Hanya untuk fitur Folia seperti proksi lirik dan pembuatan tema. Masukkan origin HTTPS tanpa jalur. Ini tidak mengatur tiga penyedia musik di atas.",
+    "testHint": "Pemeriksaan koneksi hanya memeriksa respons API. Ini tidak menyimpan draf atau memverifikasi login maupun pemutaran. Format alamat yang benar bukan jaminan layanan tersedia.",
+    "check": "Periksa koneksi",
+    "checking": "Memeriksa…",
+    "notChecked": "Alamat ini belum diperiksa.",
+    "fillAddress": "Masukkan alamat API HTTPS penyedia ini terlebih dahulu.",
+    "save": "Simpan dan terapkan",
+    "clear": "Hapus konfigurasi ponsel",
+    "reload": "Muat ulang aplikasi",
+    "changeConfirmTitle": "Konfirmasi perubahan layanan musik",
+    "changeConfirmDescription": "Sesi login lama dihapus untuk penyedia yang alamatnya berubah agar tidak terkirim ke layanan lain. Setelah menyimpan, muat ulang aplikasi dan masuk kembali ke penyedia tersebut.",
+    "clearConfirmTitle": "Hapus konfigurasi layanan musik?",
+    "clearConfirmDescription": "Hapus pengaturan ponsel dan pulihkan nilai bawaan paket. Sesi lama dihapus untuk penyedia yang alamatnya berubah. Daftar putar dan preferensi lain tetap disimpan.",
+    "confirmSave": "Konfirmasi simpan",
+    "confirmClear": "Konfirmasi hapus",
+    "cancel": "Batal",
+    "saved": "Pengaturan disimpan. Muat ulang aplikasi dan masuk kembali ke penyedia yang alamatnya berubah. Penyimpanan tidak memverifikasi koneksi API atau pemutaran musik.",
+    "cleared": "Pengaturan ponsel dihapus dan nilai bawaan dipulihkan. Muat ulang aplikasi. Penyedia tanpa API bawaan masih memerlukan alamat layanan yang valid.",
+    "failed": "Operasi belum selesai. Periksa alamat layanan dan coba lagi."
+  },
   "libraryBravais": {
     "suiteName": "Dinding Bravais",
     "homeTitle": "Pustaka",

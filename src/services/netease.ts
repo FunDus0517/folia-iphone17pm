@@ -2,6 +2,8 @@ import { NeteaseUser, NeteasePlaylist, NoCopyrightRecommendation, SongPrivilege,
 import { readProviderSessionValue, removeProviderSessionValue, writeProviderSessionValue } from './onlineMusic/providerStorage';
 import type { PersonalFmRequestOptions } from '../types/onlineMusic';
 import { resolveFoliaApiUrl } from './runtimeConfig';
+import { getNativeMusicApiBase, isNativeMusicRuntime } from './nativeMusicConfig';
+import { nativeMusicFetch } from './nativeMusicFetch';
 import {
   isNeteaseRouteMissingResponse,
   NETEASE_API_BASE_MISSING,
@@ -30,6 +32,7 @@ const isElectronRuntime = () =>
   Boolean(getElectronBridge() && typeof getElectronBridge()?.getNeteasePort === 'function');
 
 const getConfiguredApiBase = () => {
+  if (isNativeMusicRuntime()) return getNativeMusicApiBase('netease') || null;
   const viteEnv = typeof import.meta !== 'undefined' ? (import.meta as any).env : undefined;
   if (viteEnv && typeof viteEnv.VITE_NETEASE_API_BASE === 'string' && viteEnv.VITE_NETEASE_API_BASE) {
     return resolveFoliaApiUrl(viteEnv.VITE_NETEASE_API_BASE);
@@ -44,6 +47,12 @@ const getConfiguredApiBase = () => {
 
 /** 网页版配置的远端 API 地址（自检与诊断报告用）；桌面版走内嵌后端，返回 null。 */
 export const getNeteaseRemoteApiBase = (): string | null => (isElectronRuntime() ? null : getConfiguredApiBase());
+
+export const getNeteaseTransportAvailability = () => (
+  !isNativeMusicRuntime() || isElectronRuntime() || Boolean(getConfiguredApiBase())
+    ? { configured: true } as const
+    : { configured: false, reason: 'not-configured' } as const
+);
 
 // Thrown (as the error's `code`, and at the start of its message) when the Electron backend is not
 // listening, so it stays distinguishable from an ordinary request failure. The message carries the
@@ -95,7 +104,7 @@ const getApiBase = async () => {
     return `http://127.0.0.1:${port}`;
   }
 
-  if (API_BASE) return API_BASE;
+  if (API_BASE && !isNativeMusicRuntime()) return API_BASE;
 
   const configuredApiBase = getConfiguredApiBase();
   if (configuredApiBase) {
@@ -149,8 +158,9 @@ const fetchWithCreds = async (endpoint: string, options: RequestInit = {}) => {
       let anonCookie = readProviderSessionValue('netease', 'anonymous_cookie', ['netease_anonymous_cookie']);
       if (!anonCookie && !endpoint.startsWith('/register/anonimous')) {
         try {
-          const anonRes = await fetch(`${base}/register/anonimous?timestamp=${Date.now()}`).then(r => r.json());
-          if (anonRes && typeof anonRes.cookie === 'string' && anonRes.cookie) {
+          const anonRes = await nativeMusicFetch(`${base}/register/anonimous?timestamp=${Date.now()}`).then(r => r.json());
+          if (anonRes && typeof anonRes.cookie === 'string' && anonRes.cookie
+            && (!isNativeMusicRuntime() || base === getNativeMusicApiBase('netease'))) {
             anonCookie = anonRes.cookie;
             writeProviderSessionValue('netease', 'anonymous_cookie', anonRes.cookie);
           }
@@ -171,7 +181,7 @@ const fetchWithCreds = async (endpoint: string, options: RequestInit = {}) => {
   const target = endpoint.split('?')[0];
   let res: Response;
   try {
-    res = await fetch(finalUrl, { ...defaultOptions, credentials: 'include' });
+    res = await nativeMusicFetch(finalUrl, { ...defaultOptions, credentials: isNativeMusicRuntime() ? 'omit' : 'include' });
   } catch (error) {
     // 连 API 本身都没连上（本地后端退出、远端 API 不可达），不是网易上游的失败：说清是哪个接口，原始错误挂在 cause 上。
     // networkFailure 标签供 provider 归为 network；message 原文不变，二维码诊断依赖它。
@@ -183,6 +193,9 @@ const fetchWithCreds = async (endpoint: string, options: RequestInit = {}) => {
   // 照旧不看 HTTP 状态（错误也以 JSON 的 code 返回，调用方看 code）；只是正文不是 JSON 时，
   // 报出状态码与正文开头，而不是一句看不出来源的 SyntaxError。
   const body = await res.text();
+  if (isNativeMusicRuntime() && base !== getNativeMusicApiBase('netease')) {
+    throw Object.assign(new Error('音乐服务地址已更改，请刷新后重新登录。'), { code: NETEASE_API_BASE_MISSING });
+  }
   let data: any;
   try {
     data = JSON.parse(body);

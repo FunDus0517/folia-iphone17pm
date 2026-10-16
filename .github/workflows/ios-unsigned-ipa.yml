@@ -85,8 +85,10 @@ jobs:
       - name: 检查应用代码类型
         run: npm run typecheck
 
-      - name: 测试服务地址解析与音乐接口回归
-        run: npm run test:unit -- test/unit/services/nativeApiOrigin.test.ts test/unit/services/runtimeConfig.test.ts test/unit/services/coverCache.test.ts test/unit/onlineMusic/qqTransport.test.ts test/unit/onlineMusic/kugouTransport.test.ts test/unit/i18n/nativeChineseLanguage.test.ts test/unit/i18n/missingTranslation.test.ts
+      - name: 运行完整单元回归与音乐接口检查
+        env:
+          VITE_NATIVE_IOS: 'false'
+        run: npm run test:unit -- --maxWorkers=4
 
       - name: 安装手机布局测试浏览器
         run: npx playwright install webkit
@@ -148,9 +150,13 @@ jobs:
           安装前需要自行签名。
 
           - 应用全局使用简体中文；包含安全区、竖横屏、触控按键与浮层遮挡修复。
+          - 修复手机登录窗口偏移、错误态持续转圈；未配置音源可直接进入音乐服务设置。
+          - 三平台接口可在手机设置中填写并检查连接，修改后隔离旧登录信息，无需重新编译。
           - 网页资源在包内本地加载，未替换成远程网页。
           - 当前未配置音乐服务端，可体验界面与内置歌词动画预览；在线搜索播放需补充接口。
           - 手机本地音频导入尚未移植；本包不包含可试听歌曲。
+          - 在线登录、播放及账号操作需要自己的接口；后台与锁屏连续播放尚未通过真机验收。
+          - 手机功能检查矩阵见源码中的 `docs/IOS-FUNCTION-CHECK.md`，不以模拟测试代替实机结果。
           - 服务配置与校验值见构建记录附件。
           - 构建及签名说明见源码中的 `docs/IOS-BUILD.md`。
           NOTES

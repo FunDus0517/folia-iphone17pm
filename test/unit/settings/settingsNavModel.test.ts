@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SETTINGS_ANCHOR_DEFINITIONS } from '../../../src/components/modal/settings/navigation/settingsAnchorModel';
 import { SETTINGS_NAV_GROUP_SPECS, buildSettingsNavGroups, findSettingsNavItem, flattenSettingsNavItems, type SettingsSectionId } from '../../../src/components/modal/settings/navigation/settingsNavModel';
 import en from '../../../src/i18n/locales/en';
@@ -22,6 +22,7 @@ const lookup = (bundle: Record<string, unknown>, key: string): unknown => (
 );
 
 describe('settingsNavModel', () => {
+    afterEach(() => vi.unstubAllEnvs());
     it('lists every section exactly once on desktop', () => {
         const ids = flattenSettingsNavItems(buildSettingsNavGroups(echo, { isElectron: true })).map(item => item.id);
         expect([...ids].sort()).toEqual([...ALL_SECTIONS].sort());
@@ -50,11 +51,22 @@ describe('settingsNavModel', () => {
     });
 
     it('expands every declared anchor under its owning section', () => {
+        vi.stubEnv('VITE_NATIVE_IOS', 'false');
         const items = flattenSettingsNavItems(buildSettingsNavGroups(echo, { isElectron: true, hasLibrarySuiteChoice: true, isBravaisSuiteActive: true }));
         const rendered = items.flatMap(item => item.anchors.map(anchor => [anchor.id, item.id]));
-        const declared = Object.entries(SETTINGS_ANCHOR_DEFINITIONS).map(([id, definition]) => [id, definition.section]);
+        const declared = Object.entries(SETTINGS_ANCHOR_DEFINITIONS)
+            .filter(([, definition]) => !('nativeOnly' in definition) || !definition.nativeOnly)
+            .map(([id, definition]) => [id, definition.section]);
 
         expect(rendered).toEqual(declared);
+    });
+
+    it('only exposes the mobile music anchor in the native application', () => {
+        const anchors = () => findSettingsNavItem(buildSettingsNavGroups(echo, { isElectron: false }), 'integration')?.anchors.map(anchor => anchor.id);
+        vi.stubEnv('VITE_NATIVE_IOS', 'false');
+        expect(anchors()).not.toContain('nativeMusicServices');
+        vi.stubEnv('VITE_NATIVE_IOS', 'true');
+        expect(anchors()).toContain('nativeMusicServices');
     });
 
     it('lists the library suite anchor only when there is a suite to choose (its section renders nothing otherwise)', () => {

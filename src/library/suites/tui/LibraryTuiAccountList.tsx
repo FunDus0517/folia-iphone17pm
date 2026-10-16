@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ProviderAccountSummary } from '../../../types/onlineMusic';
+import { openSettings } from '../../../stores/useSettingsModalStore';
 import type { LibraryAccountController } from '../../core/contracts/account';
 import { useLibraryAccountProviders, useLibraryAccountSelector } from '../../core/bindings/useLibraryAccount';
 import { canLogoutProvider, resolveProviderSelectLabel } from '../../core/model/accountRules';
@@ -51,7 +52,11 @@ const LibraryTuiAccountList: React.FC<LibraryTuiAccountListProps> = ({ account, 
     }, [focusedIndex]);
 
     const select = (provider: ProviderAccountSummary | undefined) => {
-        if (!provider || !provider.availability.configured) return;
+        if (!provider) return;
+        if (!provider.availability.configured) {
+            if (import.meta.env.VITE_NATIVE_IOS === 'true') { onClose?.(); openSettings('options', 'integration'); }
+            return;
+        }
         setFocusedId(provider.providerId);
         void account.selectProvider(provider.providerId);
     };
@@ -88,7 +93,7 @@ const LibraryTuiAccountList: React.FC<LibraryTuiAccountListProps> = ({ account, 
                     const isFocused = index === focusedIndex;
                     const configured = provider.availability.configured;
                     const showLogout = canLogoutProvider(provider, activeProviderId);
-                    const actionLabel = active || !configured
+                    const actionLabel = !configured && import.meta.env.VITE_NATIVE_IOS === 'true' ? '配置音乐服务' : active || !configured
                         ? ''
                         : translateHomeMessage(t, resolveProviderSelectLabel(provider));
                     return (
@@ -96,14 +101,15 @@ const LibraryTuiAccountList: React.FC<LibraryTuiAccountListProps> = ({ account, 
                             key={provider.providerId}
                             role="option"
                             aria-selected={isFocused}
-                            aria-disabled={!configured || undefined}
+                            aria-disabled={(!configured && import.meta.env.VITE_NATIVE_IOS !== 'true') || undefined}
+                            data-native-config-provider={!configured && import.meta.env.VITE_NATIVE_IOS === 'true' ? provider.providerId : undefined}
                             data-tui-account-provider={provider.providerId}
                             data-focused={isFocused ? 'true' : undefined}
                             data-current={active ? 'true' : undefined}
                             data-direct={canSwitchToProviderDirectly(provider) ? 'true' : undefined}
                             onClick={() => setFocusedId(provider.providerId)}
                             onDoubleClick={() => select(provider)}
-                            className={`grid cursor-default grid-cols-[2ch_minmax(0,1fr)_minmax(0,1.4fr)_minmax(0,1fr)_10ch] items-center gap-x-3 px-4 py-0.5 ${configured ? '' : 'line-through opacity-40'}`}
+                            className={`grid cursor-default grid-cols-[2ch_minmax(0,1fr)_minmax(0,1.4fr)_minmax(0,1fr)_10ch] items-center gap-x-3 px-4 py-0.5 ${configured || import.meta.env.VITE_NATIVE_IOS === 'true' ? '' : 'line-through opacity-40'}`}
                             style={isFocused ? { backgroundColor: accentBackground } : undefined}
                         >
                             <span style={active ? { color: accentColor } : undefined}>{active ? '*' : ' '}</span>

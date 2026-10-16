@@ -18,6 +18,7 @@ import SettingsSectionHeading from './navigation/SettingsSectionHeading';
 import { setStatusMessage } from '../../../stores/useStatusMessageStore';
 import { useThemeSettingsStore } from '../../../stores/useThemeSettingsStore';
 import { useStageSettingsStore } from '../../../stores/useStageSettingsStore';
+import NativeMusicServiceSettings from './NativeMusicServiceSettings';
 
 // src/components/modal/settings/IntegrationSettingsSubview.tsx
 // Integration settings for Discord, Stage, Now Playing, OBS, and Navidrome.
@@ -372,6 +373,7 @@ const IntegrationSettingsSubview: React.FC<IntegrationSettingsSubviewProps> = ({
 
     return (
         <>
+            <NativeMusicServiceSettings isDaylight={isDaylight} settingsCardClass={settingsCardClass} />
             {isElectron && (
                 <SettingsAnchor anchorId="discordRichPresence" label={t('options.discordRichPresence') || 'Discord Rich Presence'}>
                     <SettingsSectionHeading icon={Activity} label={t('options.discordRichPresence') || 'Discord Rich Presence'} />

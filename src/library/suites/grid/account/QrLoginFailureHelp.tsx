@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Check, ChevronDown, ChevronRight, ClipboardCopy, ExternalLink, Loader2 } from 'lucide-react';
 import type { LibraryLoginSelfCheckView } from '../../../core/bindings/useLibraryAccount';
 import QrLoginSelfCheckSummary from './QrLoginSelfCheckSummary';
+import { isNativeMusicRuntime } from '../../../../services/nativeMusicConfig';
 
 // src/library/suites/grid/account/QrLoginFailureHelp.tsx
 // 扫码登录失败后显示在二维码旁边的帮助，按用户该做的顺序排：
@@ -57,6 +59,7 @@ const QrLoginFailureHelp = ({
     buildReport,
     buildIssueUrl,
 }: QrLoginFailureHelpProps) => {
+    const { t } = useTranslation();
     const [expanded, setExpanded] = useState(false);
     const [copyState, setCopyState] = useState<CopyState>('idle');
 
@@ -110,7 +113,7 @@ const QrLoginFailureHelp = ({
                 </button>
                 {expanded && (
                     <div className="mt-2" data-qr-failure-escalation>
-                        <p className="text-[11px] leading-snug opacity-75" style={{ color: 'var(--text-primary)' }}>{prompt}</p>
+                        <p className="text-[11px] leading-snug opacity-75" style={{ color: 'var(--text-primary)' }}>{isNativeMusicRuntime() ? t('nativeMusicServices.loginFailureHint') : prompt}</p>
                         <p className="text-[10px] leading-snug opacity-45 mt-1" style={{ color: 'var(--text-secondary)' }} data-qr-diagnostics-disclosure>{disclosure}</p>
                         <div className="flex flex-wrap items-center gap-2 mt-3">
                             <button

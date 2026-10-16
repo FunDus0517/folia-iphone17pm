@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getFromCache, removeFromCache, saveToCache } from '@/services/db';
 import {
     clearProviderAccountSnapshot,
@@ -6,6 +6,7 @@ import {
     loadProviderAccountSnapshot,
     saveProviderAccountSnapshot,
 } from '@/services/onlineMusic/providerAccountCache';
+import { NATIVE_MUSIC_CONFIG_KEY } from '@/services/nativeMusicConfig';
 
 // test/unit/onlineMusic/providerAccountCache.test.ts
 
@@ -17,6 +18,19 @@ vi.mock('@/services/db', () => ({
 
 describe('provider account snapshot cache', () => {
     beforeEach(() => vi.clearAllMocks());
+    afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
+
+    it('手机切换服务后不加载旧服务的账户快照', async () => {
+        vi.stubEnv('VITE_NATIVE_IOS', 'true');
+        vi.stubGlobal('localStorage', { getItem: (key: string) => key === NATIVE_MUSIC_CONFIG_KEY ? JSON.stringify({ version: 1, config: {
+            backendOrigin: '', neteaseApiBase: '', qqApiBase: 'https://new.example.test', kugouApiBase: '',
+        } }) : null });
+        const oldSnapshot = { version: 1, savedAt: 1, user: { id: 'user', nickname: 'Listener' }, collections: [], likedSongIds: ['song'], apiBase: 'https://old.example.test' };
+        vi.mocked(getFromCache).mockResolvedValue(oldSnapshot);
+        await expect(loadProviderAccountSnapshot('qq')).resolves.toBeNull();
+        vi.mocked(getFromCache).mockResolvedValue({ ...oldSnapshot, apiBase: 'https://new.example.test' });
+        expect((await loadProviderAccountSnapshot('qq'))?.user.id).toBe('user');
+    });
 
     it('stores one atomic provider-scoped home snapshot', async () => {
         vi.mocked(saveToCache).mockResolvedValue(undefined);

@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useReducedMotionFor } from '../../../../hooks/useReducedMotionFor';
 import { pillChromeClassesFor as gridChromeClassesFor } from '../../../../components/shared/pillChrome';
 import type { ProviderAccountSummary } from '../../../../types/onlineMusic';
+import { openSettings } from '../../../../stores/useSettingsModalStore';
 
 // src/library/suites/grid/account/ProviderConnectButton.tsx
 // 与 GridViewTabs 同款的胶囊切换：所有平台常驻为徽章，只有选中的一个展开显示操作文案。
@@ -51,7 +52,8 @@ export default function ProviderConnectButton({ providers, isDaylight, getAction
             {visible.map(provider => {
                 const active = provider.providerId === selected?.providerId;
                 const configured = provider.availability.configured;
-                const label = getActionLabel(provider);
+                const configure = !configured && import.meta.env.VITE_NATIVE_IOS === 'true';
+                const label = configure ? `配置音乐服务 · ${provider.shortName}` : getActionLabel(provider);
                 const [badge, color] = badges[provider.providerId]
                     ?? [Array.from(provider.shortName || provider.displayName)[0] || '?', isDaylight ? 'bg-zinc-500' : 'bg-zinc-600'];
                 return (
@@ -64,13 +66,15 @@ export default function ProviderConnectButton({ providers, isDaylight, getAction
                         aria-current={active ? 'true' : undefined}
                         // 展开项本身已经显示文案，其余徽章需要可悬停查看的名字。
                         title={active ? undefined : label}
-                        disabled={active && !configured}
+                        disabled={active && !configured && !configure}
+                        data-native-config-provider={configure ? provider.providerId : undefined}
                         onPointerMove={event => {
                             if (active || event.pointerType === 'touch' || performance.now() < hoverLockedUntil.current) return;
                             hoverLockedUntil.current = performance.now() + (calm ? 0 : HOVER_SWITCH_LOCK_MS);
                             setSelectedId(provider.providerId);
                         }}
                         onClick={() => {
+                            if (configure) { openSettings('options', 'integration'); return; }
                             if (!active) setSelectedId(provider.providerId);
                             else if (configured) onSelect(provider);
                         }}

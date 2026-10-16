@@ -7,11 +7,18 @@ if (!webServer || Array.isArray(webServer)) throw new Error('Mobile tests requir
 export default defineConfig({
   ...base,
   workers: 1,
-  webServer: { ...webServer, env: { ...webServer.env, VITE_NATIVE_IOS: 'true' } },
+  use: { ...base.use, baseURL: 'http://127.0.0.1:4175' },
+  webServer: {
+    ...webServer,
+    command: webServer.command.replaceAll('4173', '4175'),
+    url: 'http://127.0.0.1:4175',
+    reuseExistingServer: false,
+    env: { ...webServer.env, VITE_NATIVE_IOS: 'true' },
+  },
   projects: [{
     name: 'iphone17pm-webkit',
     testDir: './test/ui',
-    testMatch: 'iphone17pm.spec.ts',
+    testMatch: ['iphone17pm.spec.ts', 'mobileLogin.spec.ts', 'mobileServices.spec.ts'],
     use: {
       browserName: 'webkit',
       viewport: { width: 440, height: 956 },

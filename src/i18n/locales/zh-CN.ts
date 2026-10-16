@@ -1,6 +1,33 @@
 
 
 export default {
+  "nativeMusicServices": {
+    "loginFailureHint": "二维码由你配置的音乐接口生成。请在设置 → 连接与集成 → 音乐服务连接中检查该平台地址并检测连接。没有可访问的服务时，刷新二维码或切换网络不会补上服务；接口有响应也不代表账号登录与播放已经验证。",
+    "title": "音乐服务连接",
+    "description": "此安装包不内置网易云、QQ 或酷狗音乐接口。请填写你自己部署或信任的兼容接口地址，配置仅保存在当前手机。",
+    "websiteHint": "请勿填写 music.163.com、y.qq.com 或酷狗音乐官网；音乐官网链接不是兼容接口地址。",
+    "fields": { "neteaseApiBase": "网易云音乐接口", "qqApiBase": "QQ 音乐接口", "kugouApiBase": "酷狗音乐接口", "backendOrigin": "Folia 服务域名（可选）" },
+    "providerHint": "填写完整 HTTPS 接口地址，可包含部署路径；也可明确填写下方 Folia 域名下的相对路径。留空表示不配置此平台。",
+    "backendHint": "仅用于歌词代理、主题生成等 Folia 辅助功能；只填 HTTPS 域名，不含路径。它不会自动配置上面的三个平台。",
+    "testHint": "连接检测只检查接口响应，不保存草稿，也不代表已登录或已验证音乐播放。地址格式正确不等于服务可用。",
+    "check": "检测连接",
+    "checking": "检测中…",
+    "notChecked": "此地址尚未检测连接。",
+    "fillAddress": "请先填写该平台的 HTTPS 接口地址。",
+    "save": "保存并应用",
+    "clear": "清除手机配置",
+    "reload": "刷新应用",
+    "changeConfirmTitle": "确认更换音乐服务",
+    "changeConfirmDescription": "服务地址发生变化的平台将清除旧登录会话，避免把旧会话发送到其他服务。确认保存后，请刷新应用并重新登录这些平台。",
+    "clearConfirmTitle": "确认清除音乐服务配置",
+    "clearConfirmDescription": "将清除手机保存的接口覆盖值并恢复安装包默认配置。服务地址变化的平台会清除旧登录会话；歌单和其他偏好保持不变。",
+    "confirmSave": "确认保存",
+    "confirmClear": "确认清除",
+    "cancel": "取消",
+    "saved": "设置已保存。请点击“刷新应用”重新加载平台入口；地址变化的平台需要重新登录。保存成功不代表接口连接或播放已通过验证。",
+    "cleared": "手机配置已清除并恢复安装包默认值。请刷新应用；默认未配置接口的平台仍需填写有效服务地址。",
+    "failed": "操作未完成，请检查服务地址后重试。"
+  },
   "libraryBravais": {
     "suiteName": "Bravais 墙面",
     "homeTitle": "书库",

@@ -34,6 +34,7 @@ const LoginQr: React.FC<{ qr: BravaisLoginForm['qr'] }> = ({ qr }) => (
     <div className={`bravais-login-qr is-${qr.kind}`} data-bravais-login-qr={qr.kind}>
         {qr.kind === 'image' && <img src={qr.url} alt="QR Code" width={200} height={200} />}
         {qr.kind === 'loading' && <Loader2 aria-hidden className="animate-spin" />}
+        {qr.kind === 'error' && <div className="bravais-login-qr-error"><AlertTriangle aria-hidden /><span>{qr.text}</span></div>}
         {qr.kind === 'choose-method' && <span>{qr.text}</span>}
         {qr.kind === 'backend-failure' && (
             <div className="bravais-login-backend" data-bravais-login-backend>
@@ -76,6 +77,7 @@ const LoginView: React.FC<{ form: BravaisLoginForm; actions: BravaisAccountActio
                     <X aria-hidden />
                 </button>
             </div>
+            <div className="bravais-account-scroll">
             {methods && (
                 <div className="bravais-login-methods" data-bravais-login-methods>
                     <p className="is-label">{methods.title}</p>
@@ -134,6 +136,7 @@ const LoginView: React.FC<{ form: BravaisLoginForm; actions: BravaisAccountActio
                 <BravaisLoginFailureHelpView key={form.sessionId} help={form.failureHelp} providerId={form.providerId} actions={actions} />
             )}
             <p className="bravais-login-note">{form.note}</p>
+            </div>
         </section>
     );
 };

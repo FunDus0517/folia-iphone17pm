@@ -146,7 +146,8 @@
   .folia-search-add-queue { opacity: 0.8; }
 
   /* The touch tutorial hotspot otherwise appears on top of a dialog's close button. */
-  :root:has(.folia-search-workspace, .folia-settings-overlay, .folia-command-overlay)
+  :root:has(.folia-search-workspace, .folia-settings-overlay, .folia-command-overlay,
+    .folia-login-overlay, [data-bravais-account-login]:not([aria-hidden="true"]))
     [data-testid="page-ponder-touch-button"] { display: none; }
 
   .folia-command-overlay,
@@ -202,6 +203,106 @@
   }
   .bravais-seam-home .bravais-seam-tools { grid-template-columns: repeat(2, 44px); }
   .bravais-seam-home.is-compact .bravais-seam-tools { grid-template-columns: 44px; }
+
+  /* Desktop's 300px animated seam is not a phone dialog. Only account states
+     override the frame writer's geometry; the wall and ordinary seams keep it. */
+  .bravais-seam:is([data-bravais-seam="login"], [data-bravais-seam="confirm"]) {
+    left: 50%;
+    top: 12px;
+    bottom: 12px;
+    width: min(560px, calc(100% - 24px)) !important;
+    transform: translateX(-50%) !important;
+    z-index: 45;
+    border-radius: 20px;
+    box-shadow: 0 12px 64px rgb(0 0 0 / 55%);
+  }
+  .bravais-seam:is([data-bravais-seam="login"], [data-bravais-seam="confirm"]) .bravais-seam-content {
+    left: 0;
+    width: 100% !important;
+    margin-left: 0 !important;
+  }
+  .bravais-seam:is([data-bravais-seam="login"], [data-bravais-seam="confirm"]) .bravais-seam-body {
+    padding-bottom: 0 !important;
+  }
+  .bravais-root:has([data-bravais-account-login]:not([aria-hidden="true"]),
+    [data-bravais-account-confirm]:not([aria-hidden="true"]))::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 44;
+    background: rgb(0 0 0 / 55%);
+  }
+  .bravais-seam-form.bravais-account-form {
+    padding: 16px;
+    overscroll-behavior: contain;
+    overflow-x: hidden;
+    scrollbar-gutter: stable;
+  }
+  .bravais-account-form .bravais-account-head {
+    position: static;
+    z-index: 3;
+    flex: none;
+    align-items: center;
+    margin: 0;
+    padding: 12px 16px;
+    background: var(--bravais-seam-paper);
+  }
+  .bravais-seam-form.bravais-account-form.is-login { padding: 0; overflow: hidden; }
+  .bravais-account-form .bravais-account-scroll {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    flex-direction: column;
+    gap: 12px;
+    padding: 4px 16px 16px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-gutter: stable;
+    overscroll-behavior: contain;
+  }
+  .bravais-account-head .bravais-form-title { min-width: 0; overflow-wrap: anywhere; }
+  .bravais-account-form .bravais-form-buttons { flex: none; flex-wrap: wrap; }
+  .bravais-seam .bravais-seam-form.bravais-account-form button {
+    min-width: 44px;
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+  .bravais-login-help { font-size: 12px; }
+  .bravais-login-note { font-size: 11px; flex: none; }
+  .bravais-account-list button { min-height: 44px; touch-action: manipulation; }
+
+  .folia-login-overlay { padding: 12px; }
+  .folia-login-card {
+    width: 100%;
+    max-width: 560px;
+    padding: 0;
+    overscroll-behavior: contain;
+    overflow-x: hidden;
+    scrollbar-gutter: stable;
+  }
+  .folia-login-header {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px;
+    background: #18181b;
+  }
+  .folia-login-header h3 { margin: 0; text-align: left; }
+  .folia-login-close { position: static; flex: none; opacity: 0.8; }
+  .folia-login-body { padding: 4px 16px 20px; }
+  .folia-login-card button {
+    min-width: 44px;
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+  .folia-login-columns { flex-direction: column; align-items: center; }
+  .folia-login-columns > div { width: 100%; }
+  [data-native-config-provider] { min-width: 44px; min-height: 44px; touch-action: manipulation; }
 }
 
 /* Short, landscape phone windows need a compact cover, not a full-height square. */

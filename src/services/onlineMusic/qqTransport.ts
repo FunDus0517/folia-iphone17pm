@@ -1,5 +1,7 @@
 import { OnlineProviderError } from '../../types/onlineMusic';
 import { resolveFoliaApiUrl } from '../runtimeConfig';
+import { getNativeMusicApiBase, isNativeMusicRuntime } from '../nativeMusicConfig';
+import { nativeMusicFetch } from '../nativeMusicFetch';
 import { readProviderSessionValue, removeProviderSessionValue, writeProviderSessionValue } from './providerStorage';
 
 // src/services/onlineMusic/qqTransport.ts
@@ -58,6 +60,7 @@ const ENDPOINTS: Record<QqOperation, string> = {
 const QR_CONFIRMED_CODE = 803;
 
 const getWebApiBase = (): string => {
+    if (isNativeMusicRuntime()) return getNativeMusicApiBase('qq');
     const viteValue = typeof import.meta !== 'undefined' && import.meta.env?.MODE !== 'test'
         ? String((import.meta as ImportMeta & { env?: Record<string, string> }).env?.VITE_QQ_API_BASE || '')
         : '';
@@ -339,7 +342,7 @@ export const requestQq = async <T = unknown>(
         : { credentials, headers };
     let response: Response;
     try {
-        response = await fetch(`${base}${endpoint.path}?${query}`, init);
+        response = await nativeMusicFetch(`${base}${endpoint.path}?${query}`, init);
     } catch (error) {
         // 连后端本身都没连上（内嵌后端退出、远端不可达），与后端回了错误码分开。
         throw new OnlineProviderError(
@@ -400,6 +403,9 @@ export const requestQq = async <T = unknown>(
     }
 
     const body = await readJsonBody(response);
+    if (isNativeMusicRuntime() && base !== getNativeMusicApiBase('qq')) {
+        throw new OnlineProviderError('unavailable', '音乐服务地址已更改，请刷新后重新登录。', 'qq');
+    }
     if (body === undefined) {
         throw new OnlineProviderError('invalid-response', `QQMusicApi returned an unreadable ${operation} body`, 'qq');
     }

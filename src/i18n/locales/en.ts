@@ -1,6 +1,33 @@
 
 
 export default {
+  "nativeMusicServices": {
+    "loginFailureHint": "Your configured music API generates the QR code. Check its URL and connection in Settings → Integrations → Music service connections. Refreshing the QR code or changing networks does not provide a missing service. An API response does not verify login or playback.",
+    "title": "Music service connections",
+    "description": "This package does not include NetEase, QQ, or KuGou music APIs. Enter compatible APIs that you host or trust. Settings stay on this phone.",
+    "websiteHint": "Do not enter music.163.com, y.qq.com, or the KuGou website. Music websites are not compatible API endpoints.",
+    "fields": { "neteaseApiBase": "NetEase Music API", "qqApiBase": "QQ Music API", "kugouApiBase": "KuGou Music API", "backendOrigin": "Folia service origin (optional)" },
+    "providerHint": "Enter a complete HTTPS API URL, including its deployment path if needed, or explicitly specify a path relative to the Folia origin below. Leave empty to leave this provider unconfigured.",
+    "backendHint": "Only for Folia features such as lyric proxying and theme generation. Enter an HTTPS origin without a path. This does not configure the three music providers above.",
+    "testHint": "A connection check only inspects the API response. It does not save the draft or verify login or playback. A valid URL format does not mean a service is available.",
+    "check": "Check connection",
+    "checking": "Checking…",
+    "notChecked": "This address has not been checked.",
+    "fillAddress": "Enter this provider's HTTPS API URL first.",
+    "save": "Save and apply",
+    "clear": "Clear phone configuration",
+    "reload": "Reload app",
+    "changeConfirmTitle": "Confirm music service change",
+    "changeConfirmDescription": "Providers whose addresses change will have their old login sessions cleared so they are not sent to another service. After saving, reload the app and sign in to those providers again.",
+    "clearConfirmTitle": "Clear music service configuration?",
+    "clearConfirmDescription": "Remove saved phone overrides and restore package defaults. Old sessions are cleared for providers whose service addresses change. Playlists and unrelated preferences are kept.",
+    "confirmSave": "Confirm save",
+    "confirmClear": "Confirm clear",
+    "cancel": "Cancel",
+    "saved": "Settings saved. Reload the app to update provider entries, then sign in again where addresses changed. Saving does not verify API connectivity or music playback.",
+    "cleared": "Phone overrides cleared and package defaults restored. Reload the app. Providers without a default API still need a valid service URL.",
+    "failed": "The operation did not finish. Check the service URL and try again."
+  },
   "libraryBravais": {
     "suiteName": "Bravais wall",
     "homeTitle": "Library",

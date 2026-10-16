@@ -1,5 +1,7 @@
 import md5 from 'blueimp-md5';
 import { resolveFoliaApiUrl } from '../runtimeConfig';
+import { getNativeMusicApiBase, isNativeMusicRuntime } from '../nativeMusicConfig';
+import { nativeMusicFetch } from '../nativeMusicFetch';
 import { OnlineProviderError } from '../../types/onlineMusic';
 import { readProviderSessionValue, removeProviderSessionValue, writeProviderSessionValue } from './providerStorage';
 
@@ -58,6 +60,7 @@ const ENDPOINTS: Record<KugouOperation, string> = {
 };
 
 const getWebApiBase = (): string => {
+    if (isNativeMusicRuntime()) return getNativeMusicApiBase('kugou');
     const viteValue = typeof import.meta !== 'undefined' && import.meta.env?.MODE !== 'test'
         ? String((import.meta as ImportMeta & { env?: Record<string, string> }).env?.VITE_KUGOU_API_BASE || '')
         : '';
@@ -489,7 +492,7 @@ export const requestKugou = async <T = unknown>(operation: KugouOperation, param
 
         let response: Response;
         try {
-            response = await fetch(`${base}${ENDPOINTS[targetOperation]}?${query}`, { credentials: 'include' });
+            response = await nativeMusicFetch(`${base}${ENDPOINTS[targetOperation]}?${query}`, { credentials: isNativeMusicRuntime() ? 'omit' : 'include' });
         } catch (error) {
             // fetch only throws a TypeError when no HTTP answer arrived (offline, DNS, CORS); rethrow anything else.
             if (error instanceof TypeError) {
@@ -510,6 +513,9 @@ export const requestKugou = async <T = unknown>(operation: KugouOperation, param
                 'kugou',
                 error,
             );
+        }
+        if (isNativeMusicRuntime() && base !== getNativeMusicApiBase('kugou')) {
+            throw new OnlineProviderError('unavailable', '音乐服务地址已更改，请刷新后重新登录。', 'kugou');
         }
         persistWebSession(responseBody);
         const body = responseBody?.body ?? responseBody;

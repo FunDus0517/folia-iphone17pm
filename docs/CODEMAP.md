@@ -59,6 +59,7 @@
 | 32+ | `src/services/onlineMusic/songMetadata.ts` |
 | 32+ | `src/stores/useAppViewStore.ts` |
 | 32+ | `src/stores/useAudioSettingsStore.ts` |
+| 32+ | `src/stores/useSettingsModalStore.ts` |
 | 32+ | `src/stores/useThemeSettingsStore.ts` |
 | 32+ | `src/types/localLibrary.ts` |
 | 32+ | `src/utils/coverUrl.ts` |

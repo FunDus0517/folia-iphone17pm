@@ -1,7 +1,8 @@
 import { Capacitor, CapacitorHttp, type HttpOptions, type HttpResponse } from '@capacitor/core';
 
 // 仅供音乐服务的小型 JSON 请求使用，不替换全局 fetch，也不传输音频、图片或文件。
-// 原生桥接可绕过 WebView 的 CORS 限制；服务地址和会话隔离仍由调用方负责。
+// 原生桥接可绕过 WebView 的 CORS 限制；调用方只隔离应用存储的会话。
+// Capacitor iOS 使用系统 Cookie 存储，RequestInit.credentials 不控制它；同域换服务需单独验收。
 const REQUEST_TIMEOUT_MS = 8_000;
 
 const abortError = (): DOMException => new DOMException('音乐服务请求已取消', 'AbortError');

@@ -21,6 +21,14 @@ const fakeApp = (paths: { exe: string; userData: string }, isReady = true) => ({
     isReady: () => isReady,
 });
 
+/** 同步固定待验证的平台分支，不让宿主系统决定目录契约，并在断言失败时仍恢复原描述符。 */
+const withPlatform = <T>(platform: 'win32' | 'linux' | 'darwin', run: () => T): T => {
+    const descriptor = Object.getOwnPropertyDescriptor(process, 'platform')!;
+    Object.defineProperty(process, 'platform', { ...descriptor, value: platform });
+    try { return run(); }
+    finally { Object.defineProperty(process, 'platform', descriptor); }
+};
+
 const locale = {
     crashTitle: 'title',
     crashMessage: 'message',
@@ -60,38 +68,42 @@ const build = (overrides: Record<string, unknown> = {}) => {
 };
 
 describe('where crash reports are written', () => {
-    it('puts them beside the executable when that directory takes a write', () => {
-        const { crashLog, exeDir } = build();
-        expect(crashLog.dir).toBe(path.join(exeDir, 'logs'));
+    it.each(['win32', 'linux'] as const)('puts them beside a writable executable directory on %s', platform => {
+        withPlatform(platform, () => {
+            const { crashLog, exeDir } = build();
+            expect(crashLog.dir).toBe(path.join(exeDir, 'logs'));
+        });
     });
 
-    it('falls back to userData when the install directory refuses one', () => {
-        const exeDir = path.join(workspace, 'readonly');
-        fs.mkdirSync(exeDir, { recursive: true });
-        const userData = path.join(workspace, 'userData');
-        // A `.deb` under root-owned /opt and a read-only AppImage mount both land here, so this is
-        // the ordinary case on Linux rather than an edge one.
-        vi.spyOn(fs, 'writeFileSync').mockImplementationOnce(() => { throw new Error('EACCES'); });
-
-        const dir = resolveCrashLogDir(fakeApp({ exe: path.join(exeDir, 'Folia'), userData }));
-
-        expect(dir).toBe(path.join(userData, 'logs'));
-    });
-
-    it('never writes into a macOS bundle, because that would break its signature', () => {
-        const platform = Object.getOwnPropertyDescriptor(process, 'platform')!;
-        Object.defineProperty(process, 'platform', { value: 'darwin' });
-        try {
-            const exeDir = path.join(workspace, 'Folia.app', 'Contents', 'MacOS');
+    it.each(['win32', 'linux'] as const)('falls back to userData when the install directory refuses one on %s', platform => {
+        withPlatform(platform, () => {
+            const exeDir = path.join(workspace, 'readonly');
             fs.mkdirSync(exeDir, { recursive: true });
             const userData = path.join(workspace, 'userData');
+            // A `.deb` under root-owned /opt and a read-only AppImage mount both land here, so this is
+            // the ordinary case on Linux rather than an edge one.
+            vi.spyOn(fs, 'writeFileSync').mockImplementationOnce(() => { throw new Error('EACCES'); });
 
             const dir = resolveCrashLogDir(fakeApp({ exe: path.join(exeDir, 'Folia'), userData }));
 
             expect(dir).toBe(path.join(userData, 'logs'));
-        } finally {
-            Object.defineProperty(process, 'platform', platform);
-        }
+        });
+    });
+
+    it('never writes into a macOS bundle, because that would break its signature', () => {
+        withPlatform('darwin', () => {
+            const exeDir = path.join(workspace, 'Folia.app', 'Contents', 'MacOS');
+            fs.mkdirSync(exeDir, { recursive: true });
+            const userData = path.join(workspace, 'userData');
+            const app = fakeApp({ exe: path.join(exeDir, 'Folia'), userData });
+            const getPath = vi.spyOn(app, 'getPath');
+
+            const dir = resolveCrashLogDir(app);
+
+            expect(dir).toBe(path.join(userData, 'logs'));
+            expect(getPath).not.toHaveBeenCalledWith('exe');
+            expect(fs.existsSync(path.join(exeDir, 'logs'))).toBe(false);
+        });
     });
 });
 

@@ -1,0 +1,210 @@
+name: Folia 真正原生 iOS 测试与编译
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_url:
+        description: '可选：本仓库发行版中的源码 ZIP 链接；与仓库 ZIP 路径二选一'
+        required: false
+        type: string
+      source_archive:
+        description: '可选：本次提交内的 FoliaNative-*.zip 路径（根目录或 native-ios-input/）'
+        required: false
+        type: string
+      source_sha256:
+        description: '填写 ZIP 链接时必填：该文件完整 SHA-256（64 位）'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-ios-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  native:
+    runs-on: macos-15
+    timeout-minutes: 60
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
+    steps:
+      - name: 准备独立构建目录
+        shell: bash
+        run: echo "NATIVE_OUTPUT_DIR=$RUNNER_TEMP/folia-native-output" >> "$GITHUB_ENV"
+
+      - name: 获取工作流所在提交（不保存远端写入凭证）
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: 选择并校验原生源码
+        id: source
+        env:
+          SOURCE_URL: ${{ inputs.source_url }}
+          LOCAL_ARCHIVE: ${{ inputs.source_archive }}
+          SOURCE_SHA256: ${{ inputs.source_sha256 }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$NATIVE_OUTPUT_DIR"
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib, re, shutil, stat, subprocess, urllib.parse, uuid, zipfile
+          url = os.environ.get('SOURCE_URL', '').strip()
+          local_archive = os.environ.get('LOCAL_ARCHIVE', '').strip()
+          expected = os.environ.get('SOURCE_SHA256', '').strip().lower()
+          workspace = pathlib.Path(os.environ['GITHUB_WORKSPACE']).resolve()
+          temp = pathlib.Path(os.environ['RUNNER_TEMP']).resolve()
+          receipt = {'workflowCommit': os.environ['GITHUB_SHA']}
+          if not url and not local_archive:
+              if expected:
+                  raise SystemExit('填写源码摘要时也必须填写源码 ZIP 链接')
+              native = workspace / 'native-ios'
+              mode, archive_hash = 'checkout', ''
+          else:
+              if not re.fullmatch(r'[0-9a-f]{64}', expected):
+                  raise SystemExit('源码 ZIP 必须给出完整 SHA-256')
+              destination = temp / ('folia-native-source-' + uuid.uuid4().hex)
+              destination.mkdir()
+              source_zip = destination / 'source.zip'
+              if local_archive:
+                  if url or not re.fullmatch(r'(?:native-ios-input/)?FoliaNative-[A-Za-z0-9._-]+\.zip', local_archive):
+                      raise SystemExit('仓库源码 ZIP 路径无效，且不能同时填写下载链接')
+                  original = workspace / local_archive
+                  if (not original.is_file() or original.is_symlink()
+                          or original.parent.is_symlink()
+                          or not original.resolve().is_relative_to(workspace)
+                          or original.stat().st_size > 104857600):
+                      raise SystemExit('仓库源码 ZIP 缺失、越界或大小超限')
+                  shutil.copyfile(original, source_zip)
+              else:
+                  parsed = urllib.parse.urlsplit(url)
+                  prefix = '/' + os.environ['GITHUB_REPOSITORY'] + '/releases/download/'
+                  if (parsed.scheme != 'https' or parsed.netloc.lower() != 'github.com'
+                          or parsed.username or parsed.password or parsed.query or parsed.fragment
+                          or not parsed.path.startswith(prefix)):
+                      raise SystemExit('源码链接必须是本 GitHub 仓库发行版的 HTTPS 附件链接')
+                  subprocess.run(['curl', '--fail', '--location', '--proto', '=https',
+                                  '--proto-redir', '=https', '--tlsv1.2', '--retry', '2',
+                                  '--max-time', '300', '--max-filesize', '104857600',
+                                  '--output', str(source_zip), url], check=True)
+              archive_hash = hashlib.sha256(source_zip.read_bytes()).hexdigest()
+              if archive_hash != expected:
+                  raise SystemExit('源码 ZIP SHA-256 不匹配；没有执行其中任何文件')
+              with zipfile.ZipFile(source_zip) as archive:
+                  entries = archive.infolist()
+                  if len(entries) > 10000:
+                      raise SystemExit('源码 ZIP 项目过多')
+                  total, seen, candidates = 0, set(), []
+                  for entry in entries:
+                      name = entry.filename
+                      path = pathlib.PurePosixPath(name)
+                      if (not name or '\\' in name or path.is_absolute() or ':' in name
+                              or any(part in ('.', '..') for part in path.parts)
+                              or '\0' in name or entry.flag_bits & 1
+                              or stat.S_ISLNK(entry.external_attr >> 16)):
+                          raise SystemExit('源码 ZIP 含无效路径、加密项或软链接')
+                      key = name.rstrip('/').casefold()
+                      if key in seen:
+                          raise SystemExit('源码 ZIP 含重复路径')
+                      seen.add(key)
+                      total += entry.file_size
+                      if total > 262144000:
+                          raise SystemExit('源码 ZIP 解压大小超限')
+                      if name.endswith('native-ios/project.yml'):
+                          parts = path.parts
+                          if parts[-2:] == ('native-ios', 'project.yml') and len(parts) in (2, 3):
+                              candidates.append(name[:-len('project.yml')])
+                  if len(candidates) != 1:
+                      raise SystemExit('源码 ZIP 应含唯一 native-ios/project.yml，可带一个顶层目录')
+                  if archive.testzip() is not None:
+                      raise SystemExit('源码 ZIP CRC 校验失败')
+                  selected = candidates[0]
+                  native = destination / 'unpacked' / 'native-ios'
+                  native.mkdir(parents=True)
+                  for entry in entries:
+                      if not entry.filename.startswith(selected):
+                          continue
+                      relative = pathlib.PurePosixPath(entry.filename[len(selected):])
+                      if not relative.parts:
+                          continue
+                      target = native.joinpath(*relative.parts)
+                      if not target.resolve().is_relative_to(native.resolve()):
+                          raise SystemExit('源码路径越界')
+                      if entry.is_dir():
+                          target.mkdir(parents=True, exist_ok=True)
+                      else:
+                          target.parent.mkdir(parents=True, exist_ok=True)
+                          target.write_bytes(archive.read(entry))
+              mode = 'verified-checkout-zip' if local_archive else 'verified-release-zip'
+              receipt.update(sourceURL=url or None, sourceArchive=local_archive or None, sourceArchiveSha256=archive_hash)
+          required = ['project.yml', 'Scripts/build-unsigned.sh', 'Scripts/verify_ipa.py']
+          if not all((native / name).is_file() for name in required):
+              raise SystemExit('原生工程或构建脚本缺失')
+          for directory in ('Sources', 'Tests', 'UITests'):
+              if not list((native / directory).rglob('*.swift')):
+                  raise SystemExit('缺少 Swift 文件：' + directory)
+          receipt.update(sourceMode=mode, nativeDirectory=str(native))
+          (pathlib.Path(os.environ['NATIVE_OUTPUT_DIR']) / 'SOURCE-DOWNLOAD.json').write_text(
+              json.dumps(receipt, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output:
+              output.write('native_dir=' + str(native) + '\n')
+              output.write('source_sha256=' + archive_hash + '\n')
+              output.write('source_mode=' + mode + '\n')
+          print('源码路径及摘要校验通过；接下来才开始真正 Swift 编译。')
+          PY
+
+      - name: 安装并记录工程生成工具
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d "$DEVELOPER_DIR"
+          xcodebuild -version
+          if ! command -v xcodegen >/dev/null; then brew install xcodegen; fi
+          xcodegen --version
+
+      - name: 真正 Swift 编译、原生单测、iPhone 模拟器 UI、真机归档与校验
+        env:
+          NATIVE_DIR: ${{ steps.source.outputs.native_dir }}
+          SOURCE_ARCHIVE_SHA256: ${{ steps.source.outputs.source_sha256 }}
+          NATIVE_SOURCE_MODE: ${{ steps.source.outputs.source_mode }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash "$NATIVE_DIR/Scripts/build-unsigned.sh"
+
+      - name: 保存实际编译包、测试结果和日志（不自动发布发行版）
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: FoliaNative-iPhone17PM-${{ github.run_number }}
+          if-no-files-found: warn
+          retention-days: 30
+          path: |
+            ${{ runner.temp }}/folia-native-output/*.ipa
+            ${{ runner.temp }}/folia-native-output/*.sha256
+            ${{ runner.temp }}/folia-native-output/*.json
+            ${{ runner.temp }}/folia-native-output/*.log
+            ${{ runner.temp }}/folia-native-output/*.txt
+            ${{ runner.temp }}/folia-native-output/*.xcresult
+
+      - name: 汇总真实构建结果
+        if: success()
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, os, pathlib
+          output = pathlib.Path(os.environ['NATIVE_OUTPUT_DIR'])
+          data = json.loads((output / 'BUILD-INFO.json').read_text())
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as summary:
+              summary.write('## Folia 原生 iOS 编译完成\n')
+              summary.write('- 新编译 SwiftUI/AVFoundation App；不包含网页运行时。\n')
+              summary.write('- 真机 arm64 / IOS 平台 / 未签名；安装前需自行签名。\n')
+              for kind, label in [('unit', '单元测试'), ('ui', '原生 UI 测试')]:
+                  tests = data['tests'][kind]
+                  summary.write(f"- {label}：{tests['passedTests']} 通过、{tests['skippedTests']} 跳过、{tests['failedTests']} 失败。\n")
+              summary.write('- IPA SHA-256：`' + data['ipaSha256'] + '`\n')
+              summary.write('- 模拟器结果不等同于账号登录、在线播放、后台与锁屏的真机验收。\n')
+              summary.write('- 仅保存 Actions 附件；没有自动发布发行版。\n')
+          PY

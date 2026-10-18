@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "archive": "FoliaOriginal-0.7.21-source-01.zip",
+  "sha256": "51cbc7e8e4a31c15f827649c9fc05680894fdb2cda4e734d915430893ad1a208",
+  "parts": [
+    {
+      "name": "FoliaOriginal-0.7.21-source-01.zip.part01",
+      "sha256": "6ba78184b2c7baef6903aa69bcdb827491ceb3543d5a7352d493f3f31db8edbe",
+      "bytes": 20971520
+    },
+    {
+      "name": "FoliaOriginal-0.7.21-source-01.zip.part02",
+      "sha256": "8dafb5cf02a0786905eaa4c55a7468caea8e1fcc1cf0c2e2ec153dedc602efda",
+      "bytes": 9723498
+    }
+  ]
+}

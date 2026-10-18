@@ -1,0 +1,83 @@
+name: Build Folia iOS IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  build-ipa:
+    runs-on: macos-14
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Dependencies & Build Web
+        run: |
+          npm install --legacy-peer-deps
+          npm run build
+
+      - name: Inject Mobile Viewport & Safe Area
+        run: |
+          sed -i '' 's|<meta name="viewport"[^>]*>|<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">|g' index.html || true
+
+      - name: Setup Capacitor iOS
+        run: |
+          npm install @capacitor/core @capacitor/ios @capacitor/cli --legacy-peer-deps
+          npx cap init "Folia" "com.folia.player" --web-dir "dist"
+          
+          cat << 'EOF' > capacitor.config.ts
+          import { CapacitorConfig } from '@capacitor/cli';
+          const config: CapacitorConfig = {
+            appId: 'com.folia.player',
+            appName: 'Folia',
+            webDir: 'dist',
+            bundledWebRuntime: false,
+            plugins: {
+              CapacitorHttp: {
+                enabled: true
+              }
+            }
+          };
+          export default config;
+          EOF
+
+          npx cap add ios
+          npx cap sync ios
+
+      - name: Configure iOS Background Audio
+        run: |
+          PLIST="ios/App/App/Info.plist"
+          /usr/libexec/PlistBuddy -c "Add :UIBackgroundModes array" "$PLIST" || true
+          /usr/libexec/PlistBuddy -c "Add :UIBackgroundModes:0 string audio" "$PLIST" || true
+
+      - name: Build Unsigned App
+        run: |
+          cd ios/App
+          xcodebuild clean build \
+            -workspace App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
+
+      - name: Package Payload into IPA
+        run: |
+          cd ios/App/build/Build/Products/Release-iphoneos
+          mkdir -p Payload
+          cp -r App.app Payload/
+          zip -r Folia-major-iOS.ipa Payload/
+
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Folia-major-iOS-IPA
+          path: ios/App/build/Build/Products/Release-iphoneos/Folia-major-iOS.ipa

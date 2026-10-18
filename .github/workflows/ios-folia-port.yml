@@ -48,6 +48,7 @@ jobs:
       VITE_NETEASE_API_BASE: ${{ inputs.netease_api_base }}
       VITE_QQ_API_BASE: ${{ inputs.qq_api_base }}
       VITE_NATIVE_IOS: 'true'
+      IOS_NATIVE_REBUILT: 'true'
       IOS_BUILD_NUMBER: ${{ github.run_number }}
     defaults:
       run:
@@ -263,8 +264,9 @@ jobs:
         run: |
           set -euo pipefail
           cd "$FOLIA_PORT_ROOT"
-          npm --prefix packaging/ios test
-          python3 packaging/ios/verify-source-archive.test.py
+          mkdir -p packaging/ios/output
+          npm --prefix packaging/ios test 2>&1 | tee packaging/ios/output/packaging-node.log
+          python3 packaging/ios/verify-source-archive.test.py 2>&1 | tee packaging/ios/output/packaging-python.log
 
       - name: 原项目类型检查与完整单元回归（两个工作线程）
         run: |

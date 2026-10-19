@@ -303,6 +303,13 @@ jobs:
         run: |
           set -euo pipefail
           cd "$FOLIA_PORT_ROOT"
+          # XcodeGen --project resolves the spec's relative Swift source paths under UIRunner.
+          # Stage only the two unchanged XCTest harness files; production sources remain frozen.
+          mkdir -p packaging/ios/output/UIRunner
+          cp packaging/ios/UITests/HarnessApp.swift packaging/ios/output/UIRunner/HarnessApp.swift
+          cp packaging/ios/UITests/FoliaPortUITests.swift packaging/ios/output/UIRunner/FoliaPortUITests.swift
+          cmp packaging/ios/UITests/HarnessApp.swift packaging/ios/output/UIRunner/HarnessApp.swift
+          cmp packaging/ios/UITests/FoliaPortUITests.swift packaging/ios/output/UIRunner/FoliaPortUITests.swift
           npm --prefix packaging/ios run test:native 2>&1 | tee packaging/ios/output/native-ui.log
 
       - name: 真机 arm64 未签名归档与前端逐文件核验

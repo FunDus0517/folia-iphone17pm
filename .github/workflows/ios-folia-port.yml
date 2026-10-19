@@ -303,14 +303,32 @@ jobs:
         run: |
           set -euo pipefail
           cd "$FOLIA_PORT_ROOT"
-          # XcodeGen --project resolves the spec's relative Swift source paths under UIRunner.
-          # Stage only the two unchanged XCTest harness files; production sources remain frozen.
+          # External XCTest orchestration only; the verified production source ZIP03 stays unchanged.
+          # XcodeGen resolves the spec's relative Swift source paths under --project UIRunner.
+          external_harness="$GITHUB_WORKSPACE/.github/workflows/FoliaPortUITests.swift"
+          external_harness_sha='9e1d9a7708deaaa51007fbdc7fb21424109296b531110f631a78f7ca20a0642e'
+          printf '%s  %s\n' "$external_harness_sha" "$external_harness" | shasum -a256 -c -
           mkdir -p packaging/ios/output/UIRunner
           cp packaging/ios/UITests/HarnessApp.swift packaging/ios/output/UIRunner/HarnessApp.swift
-          cp packaging/ios/UITests/FoliaPortUITests.swift packaging/ios/output/UIRunner/FoliaPortUITests.swift
+          cp "$external_harness" packaging/ios/output/UIRunner/FoliaPortUITests.swift
           cmp packaging/ios/UITests/HarnessApp.swift packaging/ios/output/UIRunner/HarnessApp.swift
-          cmp packaging/ios/UITests/FoliaPortUITests.swift packaging/ios/output/UIRunner/FoliaPortUITests.swift
+          cmp "$external_harness" packaging/ios/output/UIRunner/FoliaPortUITests.swift
+          printf '%s  %s\n' "$external_harness_sha" packaging/ios/output/UIRunner/FoliaPortUITests.swift | shasum -a256 -c -
           npm --prefix packaging/ios run test:native 2>&1 | tee packaging/ios/output/native-ui.log
+          # This file is created only after actual xcodebuild test success; record the exact tested harness.
+          python3 - "$external_harness_sha" <<'PY'
+          import json
+          from pathlib import Path
+          import sys
+          filename = Path('packaging/ios/output/NATIVE-UI-INFO.json')
+          record = json.loads(filename.read_text(encoding='utf-8'))
+          record['externalTestHarness'] = {
+              'repositoryPath': '.github/workflows/FoliaPortUITests.swift',
+              'sha256': sys.argv[1],
+              'startupStrategy': 'real-original-visible-buttons-only; no storage seeding or JS injection',
+          }
+          filename.write_text(json.dumps(record, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+          PY
 
       - name: 真机 arm64 未签名归档与前端逐文件核验
         run: |

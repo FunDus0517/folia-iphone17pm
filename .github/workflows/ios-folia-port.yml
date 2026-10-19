@@ -281,117 +281,16 @@ jobs:
         run: npx playwright install webkit chromium
 
       - name: 测试原版移动布局、中文、歌词与文件导入
-        env:
-          SOURCE_ARCHIVE_INPUT: ${{ inputs.source_archive }}
         run: |
           set -euo pipefail
           cd "$FOLIA_PORT_ROOT"
-          # Test-only real PCM duration covers the unchanged 180s test budget; no media clock/renderer mock.
-          # The EXIT trap restores the exact helper bytes and all 3930 original source files before any build.
-          fixture="test/ui/helpers/iosOriginalFixtures.ts"
-          fixture_backup="$(mktemp "$RUNNER_TEMP/folia-original-fixture.XXXXXX")"
-          fixture_guard="$RUNNER_TEMP/folia-original-fixture-guard.py"
-          fixture_record="packaging/ios/output/BROWSER-TEST-FIXTURE-INFO.json"
-          source_archive="$GITHUB_WORKSPACE/$SOURCE_ARCHIVE_INPUT"
-          cat > "$fixture_guard" <<'PY'
-          from pathlib import Path, PurePosixPath
-          import hashlib
-          import json
-          import sys
-          import zipfile
-
-          ORIGINAL_SHA = '4ac6d3c762d92584d605b448717147b81adaf47aab941c565d6c75ef915a47c2'
-          EXTENDED_SHA = 'fb8bafef7e74f5ff7626924886154bd7ecac3a970a3dc454852309375afd1eb1'
-          SOURCE_SHA = '22b310e6b35f34172e4daf495c82ad73f3837113a32c9a805c7c1a2596c581dd'
-          TREE_SHA = '43b16ba89bfaa4256fdccd64a3e7b22e6e9310615d732d5bb780318c98610682'
-          NEEDLE = b'export function originalAudioFixture(seconds = 90): Buffer {'
-          REPLACEMENT = b'export function originalAudioFixture(seconds = 240): Buffer {'
-
-          def sha(data):
-              return hashlib.sha256(data).hexdigest()
-
-          def verify_original_source(root, archive):
-              assert sha(archive.read_bytes()) == SOURCE_SHA, 'Verified source ZIP03 bytes changed'
-              entries = []
-              with zipfile.ZipFile(archive) as source:
-                  for item in source.infolist():
-                      if item.is_dir():
-                          continue
-                      relative = PurePosixPath(item.filename).relative_to('folia-major-ios').as_posix()
-                      content = source.read(item)
-                      assert (root / relative).read_bytes() == content, f'Original source not restored: {relative}'
-                      entries.append({'path': relative, 'sha256': sha(content), 'bytes': len(content)})
-              entries.sort(key=lambda item: item['path'])
-              digest = sha(json.dumps(entries, ensure_ascii=False, separators=(',', ':')).encode('utf-8'))
-              assert len(entries) == 3930 and digest == TREE_SHA, 'Complete original source manifest changed'
-              return {'verifiedOriginalSourceFiles': len(entries), 'originalSourceTreeSha256': digest}
-
-          action, root_value, archive_value, backup_value, record_value, *exit_values = sys.argv[1:]
-          root, archive, backup, record_path = map(Path, (root_value, archive_value, backup_value, record_value))
-          fixture = root / 'test/ui/helpers/iosOriginalFixtures.ts'
-          assert sha(backup.read_bytes()) == ORIGINAL_SHA, 'Original fixture backup changed'
-          if action == 'apply':
-              source = verify_original_source(root, archive)
-              original = fixture.read_bytes()
-              assert sha(original) == ORIGINAL_SHA and original.count(NEEDLE) == 1, 'Unexpected fixture source'
-              extended = original.replace(NEEDLE, REPLACEMENT)
-              assert sha(extended) == EXTENDED_SHA, 'Only the exact 90-to-240 fixture line may change'
-              fixture.write_bytes(extended)
-              assert sha(fixture.read_bytes()) == EXTENDED_SHA
-              record = {
-                  'status': 'real-pcm-fixture-applied; browser-result-pending',
-                  'sourceArchiveSha256': SOURCE_SHA,
-                  'testOnlyFile': 'test/ui/helpers/iosOriginalFixtures.ts',
-                  'originalFixtureSha256': ORIGINAL_SHA,
-                  'extendedFixtureSha256': EXTENDED_SHA,
-                  'fixtureSeconds': {'original': 90, 'extended': 240},
-                  'fixturePcm': {'sampleRate': 16000, 'channels': 1, 'bitsPerSample': 16,
-                                 'originalBytes': 2880044, 'extendedBytes': 7680044},
-                  'testTimeoutSeconds': 180,
-                  'testCommand': 'npx playwright test -c playwright.ios-port.config.ts',
-                  'unchangedAssertions': ['real media clock', 'six original lyric modes', 'real animated Pixi canvases',
-                                          'pause by visible original button', 'paused media clock', 'seek to fourth lyric',
-                                          'portrait and landscape safe areas'],
-                  'productionSourceChanged': False,
-                  'sourceRestoredBeforeBuild': False,
-                  **source,
-              }
-              record_path.write_text(json.dumps(record, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-              print('REAL_PCM_FIXTURE_APPLIED: ' + json.dumps(record, ensure_ascii=False), flush=True)
-          elif action == 'restore':
-              assert len(exit_values) == 1
-              assert fixture.read_bytes() == backup.read_bytes(), 'EXIT trap did not restore original bytes'
-              assert sha(fixture.read_bytes()) == ORIGINAL_SHA
-              source = verify_original_source(root, archive)
-              record = json.loads(record_path.read_text(encoding='utf-8')) if record_path.exists() else {}
-              code = int(exit_values[0])
-              record.update({
-                  'status': 'browser-command-succeeded' if code == 0 else 'browser-command-failed',
-                  'browserExitStatus': code,
-                  'sourceRestoredBeforeBuild': True,
-                  'restoredFixtureSha256': sha(fixture.read_bytes()),
-                  **source,
-              })
-              record_path.write_text(json.dumps(record, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-              print('REAL_PCM_FIXTURE_RESTORED: ' + json.dumps(record, ensure_ascii=False), flush=True)
-          else:
-              raise ValueError('Unknown fixture action')
-          PY
-          printf '%s  %s\n' '4ac6d3c762d92584d605b448717147b81adaf47aab941c565d6c75ef915a47c2' "$fixture" | shasum -a256 -c -
-          cp "$fixture" "$fixture_backup"
-          restore_original_fixture() {
-              local browser_status=$?
-              trap - EXIT
-              if ! cp "$fixture_backup" "$fixture"; then exit 98; fi
-              if ! cmp "$fixture_backup" "$fixture"; then exit 98; fi
-              if ! python3 "$fixture_guard" restore "$FOLIA_PORT_ROOT" "$source_archive" "$fixture_backup" "$fixture_record" "$browser_status"; then exit 98; fi
-              printf '%s  %s\n' '4ac6d3c762d92584d605b448717147b81adaf47aab941c565d6c75ef915a47c2' "$fixture" | shasum -a256 -c - || exit 98
-              exit "$browser_status"
-          }
-          trap restore_original_fixture EXIT
-          python3 "$fixture_guard" apply "$FOLIA_PORT_ROOT" "$source_archive" "$fixture_backup" "$fixture_record"
-          printf '%s  %s\n' 'fb8bafef7e74f5ff7626924886154bd7ecac3a970a3dc454852309375afd1eb1' "$fixture" | shasum -a256 -c -
           npx playwright test -c playwright.ios-port.config.ts 2>&1 | tee packaging/ios/output/playwright.log
+
+      - name: 测试原版 Bravais 曲墙触控与横屏滚动
+        run: |
+          set -euo pipefail
+          cd "$FOLIA_PORT_ROOT"
+          npx playwright test -c playwright.ios-bravais.config.ts 2>&1 | tee packaging/ios/output/playwright-bravais.log
 
       - name: 测试原版登录主机的手机短信交互（使用固定模拟服务）
         run: |
@@ -410,32 +309,13 @@ jobs:
         run: |
           set -euo pipefail
           cd "$FOLIA_PORT_ROOT"
-          # External XCTest orchestration only; the verified production source ZIP03 stays unchanged.
-          # XcodeGen resolves the spec's relative Swift source paths under --project UIRunner.
-          external_harness="$GITHUB_WORKSPACE/.github/workflows/FoliaPortUITests.swift"
-          external_harness_sha='9e1d9a7708deaaa51007fbdc7fb21424109296b531110f631a78f7ca20a0642e'
-          printf '%s  %s\n' "$external_harness_sha" "$external_harness" | shasum -a256 -c -
+          # XcodeGen --project resolves relative Swift source paths under UIRunner.
           mkdir -p packaging/ios/output/UIRunner
           cp packaging/ios/UITests/HarnessApp.swift packaging/ios/output/UIRunner/HarnessApp.swift
-          cp "$external_harness" packaging/ios/output/UIRunner/FoliaPortUITests.swift
+          cp packaging/ios/UITests/FoliaPortUITests.swift packaging/ios/output/UIRunner/FoliaPortUITests.swift
           cmp packaging/ios/UITests/HarnessApp.swift packaging/ios/output/UIRunner/HarnessApp.swift
-          cmp "$external_harness" packaging/ios/output/UIRunner/FoliaPortUITests.swift
-          printf '%s  %s\n' "$external_harness_sha" packaging/ios/output/UIRunner/FoliaPortUITests.swift | shasum -a256 -c -
+          cmp packaging/ios/UITests/FoliaPortUITests.swift packaging/ios/output/UIRunner/FoliaPortUITests.swift
           npm --prefix packaging/ios run test:native 2>&1 | tee packaging/ios/output/native-ui.log
-          # This file is created only after actual xcodebuild test success; record the exact tested harness.
-          python3 - "$external_harness_sha" <<'PY'
-          import json
-          from pathlib import Path
-          import sys
-          filename = Path('packaging/ios/output/NATIVE-UI-INFO.json')
-          record = json.loads(filename.read_text(encoding='utf-8'))
-          record['externalTestHarness'] = {
-              'repositoryPath': '.github/workflows/FoliaPortUITests.swift',
-              'sha256': sys.argv[1],
-              'startupStrategy': 'real-original-visible-buttons-only; no storage seeding or JS injection',
-          }
-          filename.write_text(json.dumps(record, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-          PY
 
       - name: 真机 arm64 未签名归档与前端逐文件核验
         run: |
@@ -456,7 +336,6 @@ jobs:
             ${{ env.FOLIA_PORT_ROOT }}/packaging/ios/output/*.log
             ${{ env.FOLIA_PORT_ROOT }}/packaging/ios/output/*.xcresult/
             ${{ env.FOLIA_PORT_ROOT }}/packaging/ios/output/NATIVE-UI-INFO.json
-            ${{ env.FOLIA_PORT_ROOT }}/packaging/ios/output/BROWSER-TEST-FIXTURE-INFO.json
 
       - name: 保存未签名 IPA 与来源核验记录（不发布）
         uses: actions/upload-artifact@v4
@@ -470,7 +349,6 @@ jobs:
             ${{ env.FOLIA_PORT_ROOT }}/packaging/ios/output/BUILD-INFO.json
             ${{ env.FOLIA_PORT_ROOT }}/packaging/ios/output/WEB-RESOURCE-MANIFEST.json
             ${{ env.FOLIA_PORT_ROOT }}/packaging/ios/output/NATIVE-UI-INFO.json
-            ${{ env.FOLIA_PORT_ROOT }}/packaging/ios/output/BROWSER-TEST-FIXTURE-INFO.json
             ${{ env.FOLIA_PORT_ROOT }}/SOURCE-IDENTITY.json
 
       - name: 汇总本次实际验证

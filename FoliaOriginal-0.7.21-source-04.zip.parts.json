@@ -1,0 +1,82 @@
+{
+  "version": 1,
+  "archive": "FoliaOriginal-0.7.21-source-04.zip",
+  "sha256": "df5bcff4533c7810e674c826580463e2ccde591854f846fc670c951e409e892f",
+  "parts": [
+    {
+      "name": "FoliaOriginal-0.7.21-source-04.zip.part01",
+      "sha256": "ea2516cc9c19c5c24d9039685e4ba1f253a43cb790be57b085f9f60db54084ff",
+      "bytes": 2097152
+    },
+    {
+      "name": "FoliaOriginal-0.7.21-source-04.zip.part02",
+      "sha256": "7c2c41c3b42b1de8dabc87c37f66471c142e275524d3a7b4568409e957bd1e2f",
+      "bytes": 2097152
+    },
+    {
+      "name": "FoliaOriginal-0.7.21-source-04.zip.part03",
+      "sha256": "f3af93c62db9b1d5fd0a8cd4247d3b4076f4172f22ff24fe7798915dd29839f0",
+      "bytes": 2097152
+    },
+    {
+      "name": "FoliaOriginal-0.7.21-source-04.zip.part04",
+      "sha256": "7b83d0c7b8191a00752ce2277931b80225806a0f46c882e814ee60f1b7dc5611",
+      "bytes": 2097152
+    },
+    {
+      "name": "FoliaOriginal-0.7.21-source-04.zip.part05",
+      "sha256": "82198ea1508ed2f418b30acb98aa913b3200f7c587a82f0f8738584c385e57b2",
+      "bytes": 2097152
+    },
+    {
+      "name": "FoliaOriginal-0.7.21-source-04.zip.part06",
+      "sha256": "baff9433d08aab62fcadb0ca8db0e00f3621ddb6f7d65d734c0e411d2246cd9c",
+      "bytes": 2097152
+    },
+    {
+      "name": "FoliaOriginal-0.7.21-source-04.zip.part07",
+      "sha256": "d367b56f0bef7149bbd8f43bbaaf213a40c4286f7f7d938f09a788e1efad5fc2",
+      "bytes": 2097152
+    },
+    {
+      "name": "FoliaOriginal-0.7.21-source-04.zip.part08",
+      "sha256": "fcbeefef890e24ad30a334c8c33f77ab42f97ccf1ec93e48a1c2fdef46f6e212",
+      "bytes": 2097152
+    },
+    {
+      "name": "FoliaOriginal-0.7.21-source-04.zip.part09",
+      "sha256": "b18fd5a9673a23add4a5ba9de7f0bff0ec2190249e13ec22a662801f0ba43502",
+      "bytes": 2097152
+    },
+    {
+      "name": "FoliaOriginal-0.7.21-source-04.zip.part10",
+      "sha256": "aa1073462528f93ef5ecc4a0de7157a8e7cca3545c8bc914c7ea8f7070d9c5db",
+      "bytes": 2097152
+    },
+    {
+      "name": "FoliaOriginal-0.7.21-source-04.zip.part11",
+      "sha256": "68be9feb04ac4d2e93d7c546134fcb26eefc8ff23e30c4c241acc26e802fc65f",
+      "bytes": 2097152
+    },
+    {
+      "name": "FoliaOriginal-0.7.21-source-04.zip.part12",
+      "sha256": "ff562746d8ee1dee95cc3b2589e87f1982b2753103479ea4ea300c4706f097bc",
+      "bytes": 2097152
+    },
+    {
+      "name": "FoliaOriginal-0.7.21-source-04.zip.part13",
+      "sha256": "6ab50c8cc5cbcbc41ade44f4657a33b9740588cb24a3ab0c5c00efc6bc5f1a0f",
+      "bytes": 2097152
+    },
+    {
+      "name": "FoliaOriginal-0.7.21-source-04.zip.part14",
+      "sha256": "e6138bd08cd76a6412af1d667706f01fed62d47329ed4eafbef62f2312dda525",
+      "bytes": 2097152
+    },
+    {
+      "name": "FoliaOriginal-0.7.21-source-04.zip.part15",
+      "sha256": "b36d6e81907758cfb0ecc1e142821f93d37390108f6e2cd3a25927c8f9ca7831",
+      "bytes": 1342481
+    }
+  ]
+}
